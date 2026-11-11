@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+dados/*.zip
+dados/aps+failure+at+scania+trucks/*.csv
