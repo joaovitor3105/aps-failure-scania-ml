@@ -23,6 +23,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+import sklearn
 from sklearn.impute import SimpleImputer, MissingIndicator
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
@@ -43,11 +44,10 @@ from sklearn.metrics import (
 
 warnings.filterwarnings("ignore")
 
-ZIP_PATH = "/home/joaovitor/Desktop/ML/dados/aps+failure+at+scania+trucks.zip"
-OUT_DIR = "/home/joaovitor/Desktop/ML/Praticas"
-ARTIFACT_DIR = "/home/joaovitor/.gemini/antigravity-cli/brain/c6ed3131-41a2-43cf-8501-e3c351ac3ba8"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ZIP_PATH = os.path.join(BASE_DIR, "dados", "aps+failure+at+scania+trucks.zip")
+OUT_DIR = os.path.join(BASE_DIR, "Praticas")
 os.makedirs(OUT_DIR, exist_ok=True)
-os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
 RANDOM_STATE = 42
 THRESHOLDS = np.linspace(0.01, 0.99, 99)
@@ -233,46 +233,95 @@ def main():
     print("3. BUSCA DE HIPERPARÂMETROS EM 5-FOLD CV (LR E RF)...")
     print("=" * 72)
 
-    # Resultados exatos já coletados na varredura 5-fold CV (StratifiedKFold, random_state=42)
-    lr_search_results = [
-        {"C": 0.001, "best_th": 0.34, "oof_cost_total_60k": 51840, "oof_cost_fold_mean": 10368.0, "oof_cost_fold_std": 1176.8, "oof_roc_auc": 0.9826, "oof_pr_auc": 0.7225},
-        {"C": 0.01,  "best_th": 0.39, "oof_cost_total_60k": 51440, "oof_cost_fold_mean": 10288.0, "oof_cost_fold_std": 1660.2, "oof_roc_auc": 0.9781, "oof_pr_auc": 0.7467},
-        {"C": 0.1,   "best_th": 0.32, "oof_cost_total_60k": 56040, "oof_cost_fold_mean": 11208.0, "oof_cost_fold_std": 1930.3, "oof_roc_auc": 0.9713, "oof_pr_auc": 0.7408},
-        {"C": 1.0,   "best_th": 0.22, "oof_cost_total_60k": 61440, "oof_cost_fold_mean": 12288.0, "oof_cost_fold_std": 2296.2, "oof_roc_auc": 0.9645, "oof_pr_auc": 0.7319},
-        {"C": 10.0,  "best_th": 0.24, "oof_cost_total_60k": 62680, "oof_cost_fold_mean": 12536.0, "oof_cost_fold_std": 2310.3, "oof_roc_auc": 0.9603, "oof_pr_auc": 0.7324},
-    ]
-    rf_search_results = [
-        {"n_estimators": 100, "max_depth": "10",   "min_samples_leaf": 1, "best_th": 0.11, "oof_cost_total_60k": 44840, "oof_cost_fold_mean": 8968.0, "oof_cost_fold_std": 990.5,  "oof_roc_auc": 0.9829, "oof_pr_auc": 0.6656},
-        {"n_estimators": 100, "max_depth": "10",   "min_samples_leaf": 5, "best_th": 0.13, "oof_cost_total_60k": 45960, "oof_cost_fold_mean": 9192.0, "oof_cost_fold_std": 608.1,  "oof_roc_auc": 0.9829, "oof_pr_auc": 0.7115},
-        {"n_estimators": 100, "max_depth": "20",   "min_samples_leaf": 1, "best_th": 0.06, "oof_cost_total_60k": 44920, "oof_cost_fold_mean": 8984.0, "oof_cost_fold_std": 1368.7, "oof_roc_auc": 0.9801, "oof_pr_auc": 0.7245},
-        {"n_estimators": 100, "max_depth": "20",   "min_samples_leaf": 5, "best_th": 0.08, "oof_cost_total_60k": 43390, "oof_cost_fold_mean": 8678.0, "oof_cost_fold_std": 860.1,  "oof_roc_auc": 0.9857, "oof_pr_auc": 0.8214},
-        {"n_estimators": 100, "max_depth": "None", "min_samples_leaf": 1, "best_th": 0.04, "oof_cost_total_60k": 43130, "oof_cost_fold_mean": 8626.0, "oof_cost_fold_std": 875.3,  "oof_roc_auc": 0.9828, "oof_pr_auc": 0.8354},
-        {"n_estimators": 100, "max_depth": "None", "min_samples_leaf": 5, "best_th": 0.07, "oof_cost_total_60k": 43590, "oof_cost_fold_mean": 8718.0, "oof_cost_fold_std": 1037.5, "oof_roc_auc": 0.9850, "oof_pr_auc": 0.8370},
-    ]
+    lr_grid_C = [0.001, 0.01, 0.1, 1.0, 10.0]
+    lr_search_results = []
+    best_lr_C = None
+    best_lr_oof_probs = None
+    best_lr_cost = float("inf")
 
-    best_lr_C = 0.01
-    best_rf_cfg = {"n_estimators": 100, "max_depth": None, "min_samples_leaf": 1}
+    for c_val in lr_grid_C:
+        oof_probs = np.zeros(len(y_train))
+        for tr_idx, val_idx, X_tr_imp, X_val_imp, X_tr_sc, X_val_sc in e1_folds_data:
+            clf_lr = LogisticRegression(
+                C=c_val, class_weight="balanced", max_iter=500, random_state=RANDOM_STATE, n_jobs=-1
+            )
+            clf_lr.fit(X_tr_sc, y_train[tr_idx])
+            oof_probs[val_idx] = clf_lr.predict_proba(X_val_sc)[:, 1]
 
-    # Computa os vetores OOF dos modelos campeões em E1
-    best_lr_oof_probs = np.zeros(len(y_train))
-    best_rf_oof_probs = np.zeros(len(y_train))
-    for tr_idx, val_idx, X_tr_imp, X_val_imp, X_tr_sc, X_val_sc in e1_folds_data:
-        clf_lr = LogisticRegression(
-            C=best_lr_C, class_weight="balanced", max_iter=500, random_state=RANDOM_STATE, n_jobs=-1
+        oof_summary = encontrar_melhor_limiar_oof(y_train, oof_probs, folds)
+        roc_oof = round(float(roc_auc_score(y_train, oof_probs)), 4)
+        pr_oof = round(float(average_precision_score(y_train, oof_probs)), 4)
+        entry = {
+            "C": c_val,
+            "best_th": oof_summary["best_th"],
+            "oof_cost_total_60k": oof_summary["oof_cost_total_60k"],
+            "oof_cost_fold_mean": oof_summary["oof_cost_fold_mean"],
+            "oof_cost_fold_std": oof_summary["oof_cost_fold_std"],
+            "oof_roc_auc": roc_oof,
+            "oof_pr_auc": pr_oof,
+        }
+        lr_search_results.append(entry)
+        print(
+            f"  [LR C={c_val:<5}] th_OOF={entry['best_th']:.2f} | "
+            f"Custo/Dobra=${entry['oof_cost_fold_mean']:,.1f} ± {entry['oof_cost_fold_std']:,.1f} | "
+            f"ROC-AUC={roc_oof:.4f} | PR-AUC={pr_oof:.4f}"
         )
-        clf_lr.fit(X_tr_sc, y_train[tr_idx])
-        best_lr_oof_probs[val_idx] = clf_lr.predict_proba(X_val_sc)[:, 1]
+        if oof_summary["oof_cost_total_60k"] < best_lr_cost:
+            best_lr_cost = oof_summary["oof_cost_total_60k"]
+            best_lr_C = c_val
+            best_lr_oof_probs = oof_probs.copy()
 
-        clf_rf = RandomForestClassifier(
-            n_estimators=best_rf_cfg["n_estimators"],
-            max_depth=best_rf_cfg["max_depth"],
-            min_samples_leaf=best_rf_cfg["min_samples_leaf"],
-            class_weight="balanced_subsample",
-            random_state=RANDOM_STATE,
-            n_jobs=-1,
+    rf_grid_cfgs = [
+        {"n_estimators": 100, "max_depth": 10, "min_samples_leaf": 1},
+        {"n_estimators": 100, "max_depth": 10, "min_samples_leaf": 5},
+        {"n_estimators": 100, "max_depth": 20, "min_samples_leaf": 1},
+        {"n_estimators": 100, "max_depth": 20, "min_samples_leaf": 5},
+        {"n_estimators": 100, "max_depth": None, "min_samples_leaf": 1},
+        {"n_estimators": 100, "max_depth": None, "min_samples_leaf": 5},
+    ]
+    rf_search_results = []
+    best_rf_cfg = None
+    best_rf_oof_probs = None
+    best_rf_cost = float("inf")
+
+    for cfg in rf_grid_cfgs:
+        oof_probs = np.zeros(len(y_train))
+        for tr_idx, val_idx, X_tr_imp, X_val_imp, X_tr_sc, X_val_sc in e1_folds_data:
+            clf_rf = RandomForestClassifier(
+                n_estimators=cfg["n_estimators"],
+                max_depth=cfg["max_depth"],
+                min_samples_leaf=cfg["min_samples_leaf"],
+                class_weight="balanced_subsample",
+                random_state=RANDOM_STATE,
+                n_jobs=-1,
+            )
+            clf_rf.fit(X_tr_imp, y_train[tr_idx])
+            oof_probs[val_idx] = clf_rf.predict_proba(X_val_imp)[:, 1]
+
+        oof_summary = encontrar_melhor_limiar_oof(y_train, oof_probs, folds)
+        roc_oof = round(float(roc_auc_score(y_train, oof_probs)), 4)
+        pr_oof = round(float(average_precision_score(y_train, oof_probs)), 4)
+        entry = {
+            "n_estimators": cfg["n_estimators"],
+            "max_depth": str(cfg["max_depth"]),
+            "min_samples_leaf": cfg["min_samples_leaf"],
+            "best_th": oof_summary["best_th"],
+            "oof_cost_total_60k": oof_summary["oof_cost_total_60k"],
+            "oof_cost_fold_mean": oof_summary["oof_cost_fold_mean"],
+            "oof_cost_fold_std": oof_summary["oof_cost_fold_std"],
+            "oof_roc_auc": roc_oof,
+            "oof_pr_auc": pr_oof,
+        }
+        rf_search_results.append(entry)
+        print(
+            f"  [RF B={cfg['n_estimators']}, depth={str(cfg['max_depth']):<4}, leaf={cfg['min_samples_leaf']}] "
+            f"th_OOF={entry['best_th']:.2f} | Custo/Dobra=${entry['oof_cost_fold_mean']:,.1f} ± {entry['oof_cost_fold_std']:,.1f} | "
+            f"ROC-AUC={roc_oof:.4f} | PR-AUC={pr_oof:.4f}"
         )
-        clf_rf.fit(X_tr_imp, y_train[tr_idx])
-        best_rf_oof_probs[val_idx] = clf_rf.predict_proba(X_val_imp)[:, 1]
+        if oof_summary["oof_cost_total_60k"] < best_rf_cost:
+            best_rf_cost = oof_summary["oof_cost_total_60k"]
+            best_rf_cfg = cfg.copy()
+            best_rf_oof_probs = oof_probs.copy()
 
     best_lr_oof_summary = encontrar_melhor_limiar_oof(y_train, best_lr_oof_probs, folds)
     best_rf_oof_summary = encontrar_melhor_limiar_oof(y_train, best_rf_oof_probs, folds)
@@ -646,9 +695,8 @@ def main():
     ax2.legend(loc="upper right", fontsize=8.5)
 
     plt.tight_layout()
-    for d in (OUT_DIR, ARTIFACT_DIR):
-        fig.savefig(os.path.join(d, "fig_custo_limiar.pdf"), bbox_inches="tight")
-        fig.savefig(os.path.join(d, "fig_custo_limiar.png"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT_DIR, "fig_custo_limiar.pdf"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT_DIR, "fig_custo_limiar.png"), bbox_inches="tight")
     plt.close(fig)
 
     # Figura 2: Estabilidade sob Diferentes Estratégias de Imputação (E1 a E5)
@@ -683,9 +731,8 @@ def main():
     ax.grid(True, axis="y", linestyle=":", alpha=0.6)
     ax.legend(loc="upper right")
     plt.tight_layout()
-    for d in (OUT_DIR, ARTIFACT_DIR):
-        fig.savefig(os.path.join(d, "fig_estabilidade_imputacao.pdf"), bbox_inches="tight")
-        fig.savefig(os.path.join(d, "fig_estabilidade_imputacao.png"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT_DIR, "fig_estabilidade_imputacao.pdf"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT_DIR, "fig_estabilidade_imputacao.png"), bbox_inches="tight")
     plt.close(fig)
 
     # Figura 3: Calibração de Probabilidades (Curvas de Confiabilidade + Impacto no Limiar de Bayes vs OOF)
@@ -740,9 +787,8 @@ def main():
     ax2.legend(loc="upper right", fontsize=8.2)
 
     plt.tight_layout()
-    for d in (OUT_DIR, ARTIFACT_DIR):
-        fig.savefig(os.path.join(d, "fig_calibracao_probabilidades.pdf"), bbox_inches="tight")
-        fig.savefig(os.path.join(d, "fig_calibracao_probabilidades.png"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT_DIR, "fig_calibracao_probabilidades.pdf"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT_DIR, "fig_calibracao_probabilidades.png"), bbox_inches="tight")
     plt.close(fig)
 
     # Figura 4: Análise de Sensibilidade à Razão de Custos (rho = c_FN / c_FP)
@@ -782,9 +828,8 @@ def main():
     ax2.legend(loc="upper right", fontsize=8.5)
 
     plt.tight_layout()
-    for d in (OUT_DIR, ARTIFACT_DIR):
-        fig.savefig(os.path.join(d, "fig_sensibilidade_custos.pdf"), bbox_inches="tight")
-        fig.savefig(os.path.join(d, "fig_sensibilidade_custos.png"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT_DIR, "fig_sensibilidade_custos.pdf"), bbox_inches="tight")
+    fig.savefig(os.path.join(OUT_DIR, "fig_sensibilidade_custos.png"), bbox_inches="tight")
     plt.close(fig)
 
     # Salva todos os resultados em JSON para consulta exata
@@ -793,7 +838,7 @@ def main():
             "numpy": np.__version__,
             "pandas": pd.__version__,
             "matplotlib": matplotlib.__version__,
-            "sklearn": "1.7.2",
+            "sklearn": sklearn.__version__,
         },
         "tempos": {
             "lr_train_s": lr_train_time,
