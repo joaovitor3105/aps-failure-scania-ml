@@ -16,21 +16,21 @@ $$C_{total} = 10 \cdot FP + 500 \cdot FN$$
 Além da avaliação nominal com ajuste de limiar *out-of-fold* ($\theta_{OOF}$) em validação cruzada estratificada de 5 dobras sem vazamento de dados, o trabalho investiga três eixos fundamentais:
 1. **Estabilidade frente ao Tratamento de Dados Ausentes (E1 a E5):** Comparação entre imputação por mediana, média, constante zero, adição de indicadores binários de ausência (*Missingness Indicators* — MNAR) e preservação integral das 170 colunas.
 2. **Calibração Pós-Treinamento de Probabilidades:** Impacto do *Platt Scaling* (Sigmoidal) e da **Regressão Isotônica (PAVA)** sobre o *Brier Score* e sobre a viabilidade de aplicar diretamente o limiar ótimo teórico de Bayes ($\theta^* = \frac{c_{FP}}{c_{FP}+c_{FN}} \approx 0{,}0196$).
-3. **Análise de Sensibilidade à Razão de Custos ($\rho = c_{FN}/c_{FP} \in \{10, 25, 50, 100, 200\}$):** Delimitação dos regimes operacionais em que o sobrecusto do modelo linear interpretável permanece competitivo frente à *Random Forest*.
+3. **Análise de Sensibilidade à Razão de Custos ($\rho = c_{FN}/c_{FP} \in \lbrace 10, 25, 50, 100, 200 \rbrace$):** Delimitação dos regimes operacionais em que o sobrecusto do modelo linear interpretável permanece competitivo frente à *Random Forest*.
 
 ---
 
 ## Principais Resultados (Conjunto de Teste — 16.000 Instâncias)
 
-| Configuração / Modelo | Limiar ($\theta$) | Recall | Precisão | ROC-AUC | PR-AUC | $FP$ (\$10) | $FN$ (\$500) | Custo Scania (US$) |
+| Configuração / Modelo | Limiar ($\theta$) | Recall | Precisão | ROC-AUC | PR-AUC | $FP$ (US&#36; 10) | $FN$ (US&#36; 500) | Custo Scania (US&#36;) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | ---: |
-| **Random Forest (Padrão)** | 0,50 | 59,20% | 93,28% | 0,9925 | 0,8868 | 16 | 153 | \$76.660 |
-| **Regressão Logística (Padrão)** | 0,50 | 93,87% | 49,51% | 0,9892 | 0,8053 | 359 | 23 | \$15.090 |
-| **Regressão Logística (Limiar OOF - E1)** | 0,39 | 94,67% | 44,37% | 0,9892 | 0,8053 | 445 | 20 | **\$14.450** |
-| **Regressão Logística (Mediana + Ind. MNAR - E4)** | 0,29 | 96,27% | 36,68% | 0,9875 | 0,8044 | 591 | 14 | **\$12.910** |
-| **Random Forest (Limiar OOF - E1)** | 0,04 | 97,07% | 43,33% | 0,9925 | 0,8868 | 476 | 11 | **\$10.260** |
-| **Random Forest (Mediana + Ind. MNAR - E4)** | 0,04 | 97,60% | 42,51% | 0,9924 | 0,8901 | 495 | 9 | **\$9.450** |
-| **Random Forest + Calibração de Platt (Bayes $\theta^*$)** | 0,0196 | **98,67%** | 38,50% | 0,9925 | 0,8868 | 591 | **5** | **\$8.410** |
+| **Random Forest (Padrão)** | 0,50 | 59,20% | 93,28% | 0,9925 | 0,8868 | 16 | 153 | US&#36; 76.660 |
+| **Regressão Logística (Padrão)** | 0,50 | 93,87% | 49,51% | 0,9892 | 0,8053 | 359 | 23 | US&#36; 15.090 |
+| **Regressão Logística (Limiar OOF - E1)** | 0,39 | 94,67% | 44,37% | 0,9892 | 0,8053 | 445 | 20 | **US&#36; 14.450** |
+| **Regressão Logística (Mediana + Ind. MNAR - E4)** | 0,29 | 96,27% | 36,68% | 0,9875 | 0,8044 | 591 | 14 | **US&#36; 12.910** |
+| **Random Forest (Limiar OOF - E1)** | 0,04 | 97,07% | 43,33% | 0,9925 | 0,8868 | 476 | 11 | **US&#36; 10.260** |
+| **Random Forest (Mediana + Ind. MNAR - E4)** | 0,04 | 97,60% | 42,51% | 0,9924 | 0,8901 | 495 | 9 | **US&#36; 9.450** |
+| **Random Forest + Calibração de Platt (Bayes $\theta^*$)** | 0,0196 | **98,67%** | 38,50% | 0,9925 | 0,8868 | 591 | **5** | **US&#36; 8.410** |
 
 ---
 
