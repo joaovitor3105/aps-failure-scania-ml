@@ -764,25 +764,42 @@ def main():
         "RF\nPlatt",
         "RF\nIsotônica",
     ]
-    custos_bayes = [c["custo_teste_bayes"] for c in calibracao_results]
-    custos_oof_c = [c["custo_teste_oof"] for c in calibracao_results]
+    custos_bayes = np.array([c["custo_teste_bayes"] for c in calibracao_results]) / 1000.0
+    custos_oof_c = np.array([c["custo_teste_oof"] for c in calibracao_results]) / 1000.0
+    y_cap = 22.0
+    custos_bayes_plot = np.minimum(custos_bayes, y_cap)
     x_c = np.arange(len(categorias))
-    w_c = 0.36
-    b_bayes = ax2.bar(x_c - w_c / 2, np.array(custos_bayes) / 1000.0, w_c, color="#9467bd",
+    w_c = 0.38
+    b_bayes = ax2.bar(x_c - w_c / 2, custos_bayes_plot, w_c, color="#9467bd",
                       label="Limiar Teórico de Bayes ($\\theta^* = 0,0196$)")
-    b_oof = ax2.bar(x_c + w_c / 2, np.array(custos_oof_c) / 1000.0, w_c, color="#2ca02c",
+    b_oof = ax2.bar(x_c + w_c / 2, custos_oof_c, w_c, color="#2ca02c",
                     label="Limiar Empírico Otimizado ($\\theta_{OOF}$)")
-    for bar in b_bayes:
+    for idx, bar in enumerate(b_bayes):
+        val_real = custos_bayes[idx]
         h = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width() / 2.0, h + 1.0, f"\\${h:.1f}k", ha="center", va="bottom", fontsize=7.8)
-    for bar in b_oof:
+        if val_real > y_cap:
+            ax2.text(
+                bar.get_x() + bar.get_width() / 2.0 + 0.18,
+                y_cap - 1.5,
+                f"\\${val_real:.1f}k ↑\n(fora de escala)",
+                ha="left",
+                va="top",
+                fontsize=7.8,
+                fontweight="bold",
+                color="#5b2c83",
+                bbox=dict(boxstyle="round,pad=0.2", fc="#f3e8ff", ec="#9467bd", lw=0.8),
+            )
+        else:
+            ax2.text(bar.get_x() + bar.get_width() / 2.0 - 0.02, h + 0.35, f"\\${val_real:.1f}k", ha="center", va="bottom", fontsize=7.1)
+    for idx, bar in enumerate(b_oof):
+        val_real = custos_oof_c[idx]
         h = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width() / 2.0, h + 1.0, f"\\${h:.1f}k", ha="center", va="bottom", fontsize=7.8, fontweight="bold")
+        ax2.text(bar.get_x() + bar.get_width() / 2.0 + 0.02, h + 0.35, f"\\${val_real:.1f}k", ha="center", va="bottom", fontsize=7.1, fontweight="bold")
     ax2.set_xticks(x_c)
     ax2.set_xticklabels(categorias, fontsize=8.5)
     ax2.set_ylabel("Custo no Teste (Milhares de US$)")
     ax2.set_title("(b) Custo no Teste: Regra de Bayes ($\\theta^*$) vs. Limiar OOF ($\\theta_{OOF}$)")
-    ax2.set_ylim(0, max(custos_bayes) / 1000.0 * 1.18)
+    ax2.set_ylim(0, y_cap + 2.5)
     ax2.grid(True, axis="y", linestyle=":", alpha=0.6)
     ax2.legend(loc="upper right", fontsize=8.2)
 

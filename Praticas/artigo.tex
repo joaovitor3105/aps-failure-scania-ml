@@ -14,7 +14,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[brazilian]{babel}
 \addto\captionsbrazilian{\renewcommand{\abstractname}{Abstract}}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{tikz}
 \usetikzlibrary{positioning, arrows.meta}
 
@@ -76,19 +76,19 @@ Entre 2018 e 2024, diversos estudos exploraram a mesma base com estratégias var
 \label{tab:relacionados}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{4pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{p{2.3cm}p{3.4cm}r}
+\begin{tabular}{llr}
 \toprule
-\textbf{Estudo} & \textbf{Abordagem} & \textbf{Custo} \\
+\textbf{Estudo} & \textbf{Abordagem Principal} & \textbf{Custo (US\$)} \\
 \midrule
 Akarte e Hemachandra~\cite{akarte2018} & XGBoost, ponderação de classe & 10.140 \\
 Rafsunjani et al.~\cite{rafsunjani2019} & RF, subamostragem aleatória & 12.210 \\
-Ranasinghe et al.~\cite{ranasinghe2019} & RF/GBM, oversampling CGAN & 6.050 / 5.550 \\
+Ranasinghe et al.~\cite{ranasinghe2019} & RF / GBM, \textit{oversampling} CGAN & 6.050 / 5.550 \\
 Syed et al.~\cite{syed2020} & Classificador linear próprio & 20.190 \\
-Oh e Lee~\cite{oh2020} & DNN, oversampling GAN & 31.570 \\
+Oh e Lee~\cite{oh2020} & DNN, \textit{oversampling} GAN & 31.570 \\
 Sun et al.~\cite{sun2023} & Rede siamesa contrastiva & 9.080 \\
-Beikmohammadi et al.~\cite{costtransformer2024} & Transformer, \textit{focal loss}, SVM-SMOTE + R-ENN & 3.440 \\
+Beikmohammadi et al.~\cite{costtransformer2024} & Transformer, \textit{focal loss}, SVM-SMOTE & 3.440 \\
 \bottomrule
 \end{tabular}%
 }
@@ -189,7 +189,10 @@ A Regressão Logística atua como modelo de referência linear e interpretável.
 \end{equation}
 onde $\mathbf{w}$ denota o vetor de coeficientes e $b$ o intercepto. Para mitigar o desbalanceamento severo ($59:1$) durante o treinamento sem geração sintética de dados, minimiza-se a perda logarítmica ponderada com regularização L2:
 \begin{equation}
-    \mathcal{L}(\mathbf{w}, b) = -\sum_{i=1}^{N} \left[ \omega_{pos} y_i \ln(\hat{y}_i) + \omega_{neg} (1 - y_i) \ln(1 - \hat{y}_i) \right] + \frac{1}{2C} \|\mathbf{w}\|_2^2
+\begin{aligned}
+    \mathcal{L}(\mathbf{w}, b) = &-\sum_{i=1}^{N} \left[ \omega_{pos} y_i \ln(\hat{y}_i) + \omega_{neg} (1 - y_i) \ln(1 - \hat{y}_i) \right] \\
+    &+ \frac{1}{2C} \|\mathbf{w}\|_2^2
+\end{aligned}
 \end{equation}
 com pesos inversamente proporcionais às frequências das classes no treino, $\omega_c = N / (2 N_c)$ para $c \in \{neg, pos\}$.
 
@@ -213,7 +216,10 @@ Tanto a ponderação $\omega_c$ na Regressão Logística (que desloca o log-odds
     \end{equation}
     \item \textbf{Regressão Isotônica:} Ajusta uma função escalonada monótona não decrescente $\hat{P}_{Iso}(y=1 \mid s) = m(s)$ mediante o algoritmo \textit{Pool Adjacent Violators} (PAVA), resolvendo o problema de mínimos quadrados sob restrição de monotonicidade~\cite{zadrozny2002transforming}:
     \begin{equation}
-        \min_{m} \sum_{i=1}^{N} \left(y_i - m(s_i)\right)^2 \quad \text{sujeito a } m(s_i) \le m(s_j) \text{ se } s_i \le s_j
+    \begin{aligned}
+        \min_{m} \sum_{i=1}^{N} \left(y_i - m(s_i)\right)^2 \quad &\text{sujeito a } m(s_i) \le m(s_j) \\
+        &\text{sempre que } s_i \le s_j
+    \end{aligned}
     \end{equation}
 \end{itemize}
 A aderência das probabilidades antes e após a calibração é quantificada pelo \textbf{Brier Score} ($BS = \frac{1}{N}\sum_{i=1}^N (\hat{p}_i - y_i)^2$, onde valores menores indicam melhor calibração) e por diagramas de confiabilidade (\textit{reliability diagrams}). Além disso, compara-se o desempenho de duas estratégias de decisão sobre os modelos calibrados: (a) o uso direto do limiar teórico de Bayes $\theta^* = c_{FP}/(c_{FP}+c_{FN})$ (Equação~\ref{eq:limiar_bayes}) sem busca empírica e (b) a otimização empírica do limiar $\theta_{OOF}$ nas probabilidades calibradas \textit{out-of-fold}.
@@ -238,7 +244,10 @@ onde $\theta_{OOF}$ é determinado varrendo-se uma grade de 99 pontos em $[0{,}0
 \subsubsection{Análise de Sensibilidade aos Custos Atribuídos aos Erros}
 Para superar a limitação de avaliar os modelos apenas na razão nominal $\rho = c_{FN}/c_{FP} = 50$, conduz-se uma análise de sensibilidade paramétrica mantendo $c_{FP} = \$10$ fixo e variando a penalidade de falso negativo em cinco regimes operacionais:
 \begin{equation}
-    c_{FN} \in \{\$100, \$250, \$500, \$1.000, \$2.000\} \implies \rho = \frac{c_{FN}}{c_{FP}} \in \{10, 25, 50, 100, 200\}
+\begin{aligned}
+    c_{FN} &\in \{\$100, \$250, \$500, \$1.000, \$2.000\} \\
+    \implies \rho &= \frac{c_{FN}}{c_{FP}} \in \{10, 25, 50, 100, 200\}
+\end{aligned}
 \end{equation}
 Para cada razão $\rho$, recalcula-se o limiar ótimo $\theta_{OOF}(\rho)$ exclusivamente nas predições \textit{out-of-fold} do conjunto de treino (bem como o limiar teórico de Bayes $\theta^*(\rho) = 1/(1+\rho)$ nos modelos calibrados) e avalia-se o custo resultante no conjunto de teste, além de normalizar o custo pelo custo de um classificador trivial que inspeciona todos os veículos ou nenhum~\cite{drummond2006cost,hughes2025xai}. Essa análise permite identificar a estabilidade da vantagem da \textit{Random Forest} sobre a Regressão Logística ao longo de diferentes perfis de aversão ao risco.
 
