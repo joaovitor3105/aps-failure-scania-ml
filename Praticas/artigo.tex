@@ -71,12 +71,14 @@ Costa e Nascimento~\cite{costa2016ida} apresentaram a solução vencedora do des
 
 Entre 2018 e 2024, diversos estudos exploraram a mesma base com estratégias variadas, desde ponderação de classes e subamostragem até reamostragem sintética e aprendizado profundo. A Tabela~\ref{tab:relacionados} reúne o custo total no conjunto de teste reportado por esses estudos, conforme compilado em~\cite{costtransformer2024}. Os menores custos reportados empregam geração de amostras sintéticas (GAN condicional, SVM-SMOTE) ou arquiteturas profundas com funções de perda adaptadas~\cite{rengasamy2020deep,costtransformer2024}, ao preço de pipelines de elevada complexidade computacional e baixa transparência decisória; já abordagens diretas baseadas em árvores com ponderação ou subamostragem situam-se na faixa de \$10.000 a \$12.210~\cite{akarte2018,rafsunjani2019}. Em bases correlatas mais recentes, como o \textit{SCANIA Component X}, Kim e Kim~\cite{twostage2025} e Yang e Iqbal~\cite{costopt2025} corroboram a eficácia de modelos baseados em árvores acoplados à otimização de limiar orientada ao custo.
 
-\begin{table}[htbp]
+\begin{table}[!t]
 \caption{Custo total no teste (US\$) reportado para o APS Failure. Fonte dos valores: compilação em~\cite{costtransformer2024}.}
 \label{tab:relacionados}
 \centering
 \footnotesize
-\begin{tabular}{p{2.6cm}p{3.7cm}r}
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{p{2.3cm}p{3.4cm}r}
 \toprule
 \textbf{Estudo} & \textbf{Abordagem} & \textbf{Custo} \\
 \midrule
@@ -88,7 +90,8 @@ Oh e Lee~\cite{oh2020} & DNN, oversampling GAN & 31.570 \\
 Sun et al.~\cite{sun2023} & Rede siamesa contrastiva & 9.080 \\
 Beikmohammadi et al.~\cite{costtransformer2024} & Transformer, \textit{focal loss}, SVM-SMOTE + R-ENN & 3.440 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \subsection{Tratamento de Atributos Ausentes e Estabilidade Decisória}
@@ -132,10 +135,13 @@ A base é particionada nativamente em dois subconjuntos independentes para asseg
 
 Cada instância agrega 170 atributos numéricos anonimizados pela montadora por razões de confidencialidade industrial (além do rótulo de classe), nomeados por um código de letras e número (por exemplo, \texttt{aa\_000} e \texttt{ab\_000}). As variáveis incorporam leituras contínuas pontuais e distribuições discretizadas em histogramas com múltiplos intervalos de medição. A Tabela~\ref{tab:caracterizacao_dados} sintetiza a estrutura dos dados.
 
-\begin{table}[htbp]
+\begin{table}[!t]
 \caption{Caracterização Geral do Dataset Scania APS Failure}
 \label{tab:caracterizacao_dados}
 \centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lrr}
 \toprule
 \textbf{Propriedade} & \textbf{Treinamento} & \textbf{Teste} \\
@@ -147,7 +153,8 @@ Atributos preditores & 170 & 170 \\
 Razão de Desbalanceamento & $\approx 59:1$ & $\approx 41{,}7:1$ \\
 Origem dos Dados & Sensores APS & Sensores APS \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \subsection{Estratégias de Tratamento de Atributos Ausentes e Pré-processamento}
@@ -239,8 +246,9 @@ Para cada razão $\rho$, recalcula-se o limiar ótimo $\theta_{OOF}(\rho)$ exclu
 
 A Figura~\ref{fig:fluxograma} sintetiza o fluxo metodológico expandido, contemplando as estratégias de tratamento de atributos ausentes, a modelagem comparativa, a calibração de probabilidades e a análise de sensibilidade aos custos.
 
-\begin{figure}[htbp]
+\begin{figure}[!t]
 \centering
+\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[
     node distance=0.40cm,
     box/.style={
@@ -303,7 +311,8 @@ A Figura~\ref{fig:fluxograma} sintetiza o fluxo metodológico expandido, contemp
 \draw[arrow] (d3) -- (d4);
 \draw[arrow] (d4) -- (d5);
 
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Fluxograma metodológico do pipeline de manutenção preditiva sensível ao custo com análise de imputação, calibração probabilística e sensibilidade à razão de erros.}
 \label{fig:fluxograma}
 \end{figure}
@@ -320,41 +329,45 @@ Os experimentos foram executados em linguagem Python utilizando as bibliotecas \
 
 A Tabela~\ref{tab:busca_hiperparametros} sintetiza os resultados obtidos durante a busca em grade conduzida exclusivamente sobre as 60.000 instâncias de treinamento mediante validação cruzada estratificada de $k=5$ dobras (12.000 amostras por dobra, contendo exatamente 200 casos positivos e 11.800 negativos) sob a estratégia de referência E1 (descarte das 8 colunas com $>50\%$ de nulos e imputação pela mediana, resultando em 162 atributos).
 
-\begin{table}[htbp]
+\begin{table}[!t]
 \caption{Seleção de Hiperparâmetros e Limiar $\theta_{OOF}$ na Validação Cruzada Estratificada ($k=5$ Dobras, Estratégia E1)}
 \label{tab:busca_hiperparametros}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3.2pt}
+\setlength{\tabcolsep}{2.8pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{llcccc}
 \toprule
 \textbf{Modelo} & \textbf{Configuração} & $\boldsymbol{\theta_{OOF}}$ & \textbf{Custo/Dobra (US\$)} & \textbf{ROC-AUC} & \textbf{PR-AUC} \\
 \midrule
-Reg. Logística & $C = 0{,}001$ & 0,34 & $10.368 \pm 1.177$ & 0,9826 & 0,7225 \\
-\textbf{Reg. Logística} & $\mathbf{C = 0{,}01}$ & \textbf{0,39} & $\mathbf{10.288 \pm 1.660}$ & \textbf{0,9781} & \textbf{0,7467} \\
-Reg. Logística & $C = 0{,}1$ & 0,32 & $11.208 \pm 1.930$ & 0,9713 & 0,7408 \\
-Reg. Logística & $C = 1{,}0$ & 0,22 & $12.288 \pm 2.296$ & 0,9645 & 0,7319 \\
-Reg. Logística & $C = 10{,}0$ & 0,24 & $12.536 \pm 2.310$ & 0,9603 & 0,7324 \\
+Reg. Log. & $C = 0{,}001$ & 0,34 & $10.368 \pm 1.177$ & 0,9826 & 0,7225 \\
+\textbf{Reg. Log.} & $\mathbf{C = 0{,}01}$ & \textbf{0,39} & $\mathbf{10.288 \pm 1.660}$ & \textbf{0,9781} & \textbf{0,7467} \\
+Reg. Log. & $C = 0{,}1$ & 0,32 & $11.208 \pm 1.930$ & 0,9713 & 0,7408 \\
+Reg. Log. & $C = 1{,}0$ & 0,22 & $12.288 \pm 2.296$ & 0,9645 & 0,7319 \\
+Reg. Log. & $C = 10{,}0$ & 0,24 & $12.536 \pm 2.310$ & 0,9603 & 0,7324 \\
 \midrule
 Random Forest & $B=100$, prof.$=10$, folha$=1$ & 0,11 & $8.968 \pm 991$ & 0,9829 & 0,6656 \\
 Random Forest & $B=100$, prof.$=10$, folha$=5$ & 0,13 & $9.192 \pm 608$ & 0,9829 & 0,7115 \\
 Random Forest & $B=100$, prof.$=20$, folha$=1$ & 0,06 & $8.984 \pm 1.369$ & 0,9801 & 0,7245 \\
 Random Forest & $B=100$, prof.$=20$, folha$=5$ & 0,08 & $8.678 \pm 860$ & 0,9857 & 0,8214 \\
-\textbf{Random Forest} & $\mathbf{B=100}$\textbf{, prof.}$\mathbf{=\text{ Livre}}$\textbf{, folha}$\mathbf{=1}$ & \textbf{0,04} & $\mathbf{8.626 \pm 875}$ & \textbf{0,9828} & \textbf{0,8354} \\
+\textbf{Random Forest} & $\mathbf{B=100}$\textbf{, prof.}$\mathbf{=\text{Livre}}$\textbf{, folha}$\mathbf{=1}$ & \textbf{0,04} & $\mathbf{8.626 \pm 875}$ & \textbf{0,9828} & \textbf{0,8354} \\
 Random Forest & $B=100$, prof.$=\text{Livre}$, folha$=5$ & 0,07 & $8.718 \pm 1.038$ & 0,9850 & 0,8370 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 Na Regressão Logística, observa-se que uma regularização L2 mais forte ($C = 0{,}01$) alcança o menor custo médio por dobra ($10.288 \pm 1.660$, totalizando \$51.440 no conjunto de treino \textit{out-of-fold}) e a maior PR-AUC ($0{,}7467$). Valores elevados de $C$ ($1{,}0$ e $10{,}0$) degradam tanto o custo quanto o desvio-padrão entre dobras, pois a alta colinearidade entre os 162 atributos (muitos deles originados de faixas adjacentes de um mesmo histograma de sensor) provoca sobreajuste aos casos positivos sob ponderação pesada ($\omega_{pos} \approx 30$). Já na \textit{Random Forest}, configurações sem restrição severa de profundidade (profundidade 20 com \texttt{min\_samples\_leaf}=5 ou profundidade livre com \texttt{min\_samples\_leaf} $\in \{1, 5\}$) elevam a PR-AUC de $0{,}6656$ para a faixa de $0{,}8214$ a $0{,}8370$, sendo a configuração de profundidade livre e \texttt{min\_samples\_leaf}=1 a que minimiza o custo médio por dobra em \$8.626 $\pm$ \$875 (cerca de 16,2\% inferior ao modelo linear na validação e com cerca de metade do desvio-padrão entre dobras).
 
 Fixados os hiperparâmetros ótimos ($C=0{,}01$ para a Regressão Logística e $B=100$ árvores sem poda de profundidade para a \textit{Random Forest}) e os respectivos limiares ótimos obtidos nas predições \textit{out-of-fold} ($\theta_{OOF} = 0{,}39$ para Regressão Logística e $\theta_{OOF} = 0{,}04$ para \textit{Random Forest}), ambos os modelos foram reajustados na totalidade do treino e avaliados uma única vez nas 16.000 instâncias do conjunto de teste cego. A Tabela~\ref{tab:resultados_teste_principal} e a Figura~\ref{fig:custo_limiar} detalham o desempenho comparativo no limiar padrão ($\theta = 0{,}50$) e no limiar otimizado ($\theta_{OOF}$).
 
-\begin{table*}[htbp]
+\begin{table*}[!t]
 \caption{Desempenho Comparativo no Conjunto de Teste Cego (16.000 Instâncias: 15.625 Negativas e 375 Positivas -- Estratégia E1)}
 \label{tab:resultados_teste_principal}
 \centering
 \footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccccccr}
 \toprule
 \textbf{Modelo e Regra de Decisão} & $\boldsymbol{\theta}$ & \textbf{Acurácia} & \textbf{Precisão} & \textbf{Recall} & $\mathbf{F_1}$\textbf{-Score} & \textbf{ROC-AUC} & \textbf{PR-AUC} & $\mathbf{TN}$ & $\mathbf{FP}$ & $\mathbf{FN}$ & \textbf{Custo Scania (US\$)} \\
@@ -364,7 +377,8 @@ Regressão Logística (Limiar Padrão) & 0,50 & 0,9761 & 0,4951 & 0,9387 & 0,648
 Random Forest (Limiar Padrão) & 0,50 & 0,9894 & 0,9328 & 0,5920 & 0,7243 & 0,9925 & 0,8868 & 15.609 & 16 & 153 & 76.660 \\
 \textbf{Random Forest (Limiar OOF)} & \textbf{0,04} & \textbf{0,9696} & \textbf{0,4333} & \textbf{0,9707} & \textbf{0,5992} & \textbf{0,9925} & \textbf{0,8868} & \textbf{15.149} & \textbf{476} & \textbf{11} & \textbf{10.260} \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 
 \begin{figure*}[htbp]
@@ -386,11 +400,13 @@ A análise crítica da Tabela~\ref{tab:resultados_teste_principal} e da Figura~\
 
 Para verificar se a vantagem da \textit{Random Forest} sobre a Regressão Logística e os padrões de erro observados dependem da escolha específica de imputação (E1), a Tabela~\ref{tab:estabilidade_imputacao} e a Figura~\ref{fig:estabilidade_imputacao} apresentam os resultados das cinco estratégias de tratamento de dados ausentes (E1 a E5), todas avaliadas sob o mesmo protocolo de 5 dobras sem vazamento.
 
-\begin{table*}[htbp]
+\begin{table*}[!t]
 \caption{Análise de Estabilidade sob Diferentes Estratégias de Tratamento de Atributos Ausentes (Validação 5-Fold e Conjunto de Teste)}
 \label{tab:estabilidade_imputacao}
 \centering
 \footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{llccccccccr}
 \toprule
 & & & \multicolumn{4}{c}{\textbf{Regressão Logística ($C=0{,}01$)}} & \multicolumn{4}{c}{\textbf{Random Forest ($B=100$)}} \\
@@ -403,7 +419,8 @@ E3 & Corte $>50\%$ + Constante Zero & 162 & 0,45 & $10.248 \pm 1.667$ & 396 / 25
 \textbf{E4} & \textbf{Corte $>50\%$ + Mediana + Ind. MNAR} & \textbf{323} & \textbf{0,29} & $\mathbf{9.962 \pm 1.664}$ & \textbf{591 / 14} & \textbf{\$12.910} & \textbf{0,04} & $\mathbf{7.612 \pm 1.090}$ & \textbf{495 / 9} & \textbf{\$9.450} \\
 E5 & Sem Corte (170 col.) + Mediana & 170 & 0,28 & $10.396 \pm 1.636$ & 595 / 16 & \$13.950 & 0,04 & $8.808 \pm 1.144$ & 481 / 12 & \$10.810 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 
 \begin{figure}[htbp]
@@ -424,11 +441,13 @@ Os resultados da Tabela~\ref{tab:estabilidade_imputacao} fornecem evidências ro
 
 A Tabela~\ref{tab:calibracao_probabilidades} e a Figura~\ref{fig:calibracao_probabilidades} examinam o efeito da calibração pós-treinamento (\textit{Platt Scaling} sigmoidal e Regressão Isotônica via PAVA) sobre a qualidade das probabilidades estimadas (mensurada pelo Brier Score e pela probabilidade média predita no teste, cuja prevalência real de positivos é $375/16.000 = 0{,}0234$) e confrontam duas políticas de escolha de limiar: a aplicação direta do limiar ótimo teórico de Bayes ($\theta^* = 10/510 \approx 0{,}0196$) versus o limiar empírico otimizado \textit{out-of-fold} ($\theta_{OOF}$).
 
-\begin{table*}[htbp]
+\begin{table*}[!t]
 \caption{Impacto da Calibração de Probabilidades sobre o Brier Score e sobre o Custo no Teste com Limiar de Bayes ($\theta^* = 0{,}0196$) vs. Limiar Empírico ($\theta_{OOF}$)}
 \label{tab:calibracao_probabilidades}
 \centering
 \footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{llcccccccc}
 \toprule
 & & & & \multicolumn{3}{c}{\textbf{Regra Teórica de Bayes ($\boldsymbol{\theta^* = 0{,}0196}$)}} & \multicolumn{3}{c}{\textbf{Limiar Otimizado OOF ($\boldsymbol{\theta_{OOF}}$)}} \\
@@ -443,7 +462,8 @@ Random Forest & Sem Calibração (\texttt{balanced\_sub.}) & 0,00774 & 0,0180 & 
 Random Forest & Escalonamento de Platt & 0,00696 & 0,0204 & \textbf{591 / 5} & \textbf{0,9867} & \textbf{\$8.410} & 0,04 & 476 / 11 & \$10.260 \\
 Random Forest & Regressão Isotônica (PAVA) & \textbf{0,00683} & \textbf{0,0208} & 476 / 11 & 0,9707 & \$10.260 & \textbf{0,02} & \textbf{476 / 11} & \$10.260 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 
 \begin{figure*}[htbp]
@@ -464,11 +484,13 @@ A análise conjunta da Tabela~\ref{tab:calibracao_probabilidades} e da Figura~\r
 
 Em cenários reais de operação logística, a razão $\rho = c_{FN}/c_{FP}$ entre o custo de uma avaria na estrada e o custo de uma inspeção preventiva varia conforme o valor da carga, multas por atraso e disponibilidade de oficinas. A Tabela~\ref{tab:sensibilidade_custos} e a Figura~\ref{fig:sensibilidade_custos} apresentam a análise de sensibilidade variando $\rho \in \{10, 25, 50, 100, 200\}$ (com $c_{FP} = \$10$ fixo e $c_{FN} \in \{\$100, \$250, \$500, \$1.000, \$2.000\}$), reportando também o custo normalizado em relação ao classificador trivial ótimo $C_{trivial} = \min(c_{FP} N_{neg}, c_{FN} N_{pos})$~\cite{drummond2006cost}.
 
-\begin{table*}[htbp]
+\begin{table*}[!t]
 \caption{Análise de Sensibilidade à Razão de Custos $\rho = c_{FN}/c_{FP}$ no Conjunto de Teste ($c_{FP} = \$10$ Fixo)}
 \label{tab:sensibilidade_custos}
 \centering
 \footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{cccccccccccr}
 \toprule
 & & & & \multicolumn{3}{c}{\textbf{Regressão Logística ($\boldsymbol{\theta_{OOF}}$)}} & \multicolumn{3}{c}{\textbf{Random Forest ($\boldsymbol{\theta_{OOF}}$)}} & \textbf{RF Isotônica} & \\
@@ -481,7 +503,8 @@ $\mathbf{50:1}$ & \textbf{\$500} & \textbf{0,0196} & \textbf{\$156.250} & \textb
 $100:1$ & \$1.000 & 0,0099 & \$156.250 & 0,16 & 944 / 11 & \$20.440 (13,1\%) & 0,02 & 793 / 3 & \$10.930 (7,0\%) & \$10.930 & $1{,}87\times$ \\
 $200:1$ & \$2.000 & 0,0050 & \$156.250 & 0,14 & 1.064 / 9 & \$28.640 (18,3\%) & 0,02 & 793 / 3 & \$13.930 (8,9\%) & \$13.930 & $2{,}06\times$ \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 
 \begin{figure*}[htbp]
