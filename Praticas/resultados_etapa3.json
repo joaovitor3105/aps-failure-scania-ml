@@ -1,6 +1,6 @@
 {
   "versoes": {
-    "numpy": "2.4.6",
+    "numpy": "2.3.4",
     "pandas": "2.3.3",
     "matplotlib": "3.10.9",
     "sklearn": "1.7.2"
@@ -648,6 +648,10 @@
       "custo_trivial_teste": 37500,
       "lr_th_oof": 0.67,
       "lr_custo_teste": 5630,
+      "lr_ci95": [
+        4540,
+        6810
+      ],
       "lr_custo_norm": 0.1501,
       "lr_fp": 253,
       "lr_fn": 31,
@@ -655,6 +659,10 @@
       "lr_iso_bayes_custo": 6180,
       "rf_th_oof": 0.12,
       "rf_custo_teste": 4570,
+      "rf_ci95": [
+        3570,
+        5660
+      ],
       "rf_custo_norm": 0.1219,
       "rf_fp": 187,
       "rf_fn": 27,
@@ -662,6 +670,12 @@
       "rf_iso_bayes_custo": 4570,
       "rf_iso_oof_custo": 4570,
       "sobrecusto_lr_abs": 1060,
+      "diff_ci95": [
+        50,
+        2110
+      ],
+      "p_uni": 0.0205,
+      "p_bi": 0.041,
       "razao_lr_rf": 1.23
     },
     {
@@ -672,6 +686,10 @@
       "custo_trivial_teste": 93750,
       "lr_th_oof": 0.39,
       "lr_custo_teste": 9450,
+      "lr_ci95": [
+        7370,
+        11790
+      ],
       "lr_custo_norm": 0.1008,
       "lr_fp": 445,
       "lr_fn": 20,
@@ -679,6 +697,10 @@
       "lr_iso_bayes_custo": 9340,
       "rf_th_oof": 0.05,
       "rf_custo_teste": 7100,
+      "rf_ci95": [
+        5470,
+        8940
+      ],
       "rf_custo_norm": 0.0757,
       "rf_fp": 410,
       "rf_fn": 12,
@@ -686,6 +708,12 @@
       "rf_iso_bayes_custo": 7100,
       "rf_iso_oof_custo": 7360,
       "sobrecusto_lr_abs": 2350,
+      "diff_ci95": [
+        430,
+        4380
+      ],
+      "p_uni": 0.0069,
+      "p_bi": 0.0138,
       "razao_lr_rf": 1.33
     },
     {
@@ -696,6 +724,10 @@
       "custo_trivial_teste": 156250,
       "lr_th_oof": 0.39,
       "lr_custo_teste": 14450,
+      "lr_ci95": [
+        10330,
+        19050
+      ],
       "lr_custo_norm": 0.0925,
       "lr_fp": 445,
       "lr_fn": 20,
@@ -703,6 +735,10 @@
       "lr_iso_bayes_custo": 14340,
       "rf_th_oof": 0.04,
       "rf_custo_teste": 10260,
+      "rf_ci95": [
+        7250,
+        13780
+      ],
       "rf_custo_norm": 0.0657,
       "rf_fp": 476,
       "rf_fn": 11,
@@ -710,6 +746,12 @@
       "rf_iso_bayes_custo": 10260,
       "rf_iso_oof_custo": 10260,
       "sobrecusto_lr_abs": 4190,
+      "diff_ci95": [
+        250,
+        8320
+      ],
+      "p_uni": 0.0185,
+      "p_bi": 0.037,
       "razao_lr_rf": 1.41
     },
     {
@@ -720,6 +762,10 @@
       "custo_trivial_teste": 156250,
       "lr_th_oof": 0.16,
       "lr_custo_teste": 20440,
+      "lr_ci95": [
+        14370,
+        27420
+      ],
       "lr_custo_norm": 0.1308,
       "lr_fp": 944,
       "lr_fn": 11,
@@ -727,6 +773,10 @@
       "lr_iso_bayes_custo": 20090,
       "rf_th_oof": 0.02,
       "rf_custo_teste": 10930,
+      "rf_ci95": [
+        7910,
+        14850
+      ],
       "rf_custo_norm": 0.07,
       "rf_fp": 793,
       "rf_fn": 3,
@@ -734,6 +784,12 @@
       "rf_iso_bayes_custo": 10930,
       "rf_iso_oof_custo": 10930,
       "sobrecusto_lr_abs": 9510,
+      "diff_ci95": [
+        4420,
+        15520
+      ],
+      "p_uni": 0.0,
+      "p_bi": 0.0,
       "razao_lr_rf": 1.87
     },
     {
@@ -744,6 +800,10 @@
       "custo_trivial_teste": 156250,
       "lr_th_oof": 0.14,
       "lr_custo_teste": 28640,
+      "lr_ci95": [
+        18220,
+        40910
+      ],
       "lr_custo_norm": 0.1833,
       "lr_fp": 1064,
       "lr_fn": 9,
@@ -751,6 +811,10 @@
       "lr_iso_bayes_custo": 28080,
       "rf_th_oof": 0.02,
       "rf_custo_teste": 13930,
+      "rf_ci95": [
+        7910,
+        21850
+      ],
       "rf_custo_norm": 0.0892,
       "rf_fp": 793,
       "rf_fn": 3,
@@ -758,6 +822,12 @@
       "rf_iso_bayes_custo": 13930,
       "rf_iso_oof_custo": 13930,
       "sobrecusto_lr_abs": 14710,
+      "diff_ci95": [
+        6460,
+        24900
+      ],
+      "p_uni": 0.0,
+      "p_bi": 0.0,
       "razao_lr_rf": 2.06
     }
   ],

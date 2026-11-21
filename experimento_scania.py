@@ -629,6 +629,15 @@ def main():
         te_rf_iso_bayes = avaliar_no_teste(y_test, rf_test_iso, th_b, c_fp=c_fp, c_fn=c_fn)
         te_rf_iso_oof = avaliar_no_teste(y_test, rf_test_iso, oof_rf_iso_r["best_th"], c_fp=c_fp, c_fn=c_fn)
 
+        pred_lr_r = (lr_test_probs >= oof_lr_r["best_th"]).astype(int)
+        pred_rf_r = (rf_test_probs >= oof_rf_r["best_th"]).astype(int)
+        lr_ci95_r, _, tots_lr_r = bootstrap_custo_teste(y_test, pred_lr_r, c_fp=c_fp, c_fn=c_fn)
+        rf_ci95_r, _, tots_rf_r = bootstrap_custo_teste(y_test, pred_rf_r, c_fp=c_fp, c_fn=c_fn)
+        diff_r = tots_lr_r - tots_rf_r
+        diff_ci95_r = [int(round(np.percentile(diff_r, 2.5))), int(round(np.percentile(diff_r, 97.5)))]
+        p_uni_r = round(float(np.mean(diff_r <= 0)), 4)
+        p_bi_r = round(min(1.0, 2.0 * min(float(np.mean(diff_r <= 0)), float(np.mean(diff_r >= 0)))), 4)
+
         s_row = {
             "rho": rho,
             "c_fp": c_fp,
@@ -637,6 +646,7 @@ def main():
             "custo_trivial_teste": custo_trivial_teste,
             "lr_th_oof": oof_lr_r["best_th"],
             "lr_custo_teste": te_lr_r["custo"],
+            "lr_ci95": lr_ci95_r,
             "lr_custo_norm": round(te_lr_r["custo"] / custo_trivial_teste, 4),
             "lr_fp": te_lr_r["fp"],
             "lr_fn": te_lr_r["fn"],
@@ -644,6 +654,7 @@ def main():
             "lr_iso_bayes_custo": te_lr_iso_bayes["custo"],
             "rf_th_oof": oof_rf_r["best_th"],
             "rf_custo_teste": te_rf_r["custo"],
+            "rf_ci95": rf_ci95_r,
             "rf_custo_norm": round(te_rf_r["custo"] / custo_trivial_teste, 4),
             "rf_fp": te_rf_r["fp"],
             "rf_fn": te_rf_r["fn"],
@@ -651,6 +662,9 @@ def main():
             "rf_iso_bayes_custo": te_rf_iso_bayes["custo"],
             "rf_iso_oof_custo": te_rf_iso_oof["custo"],
             "sobrecusto_lr_abs": te_lr_r["custo"] - te_rf_r["custo"],
+            "diff_ci95": diff_ci95_r,
+            "p_uni": p_uni_r,
+            "p_bi": p_bi_r,
             "razao_lr_rf": round(te_lr_r["custo"] / te_rf_r["custo"], 2),
         }
         sensibilidade_results.append(s_row)
