@@ -111,11 +111,27 @@ def encontrar_melhor_limiar_oof(y_true, oof_probs, folds, c_fp=10, c_fn=500):
         fold_recalls.append(recall_score(y_v, p_v))
         fold_f1s.append(f1_score(y_v, p_v))
 
+    # Validação Cruzada Aninhada (Nested CV): seleciona limiar nas 4 dobras internas e avalia na dobra retida
+    nested_costs_raw = []
+    nested_ths = []
+    for tr_idx, val_idx in folds:
+        custos_inner, _, _ = calcular_custo_scania_curva(y_true[tr_idx], oof_probs[tr_idx], THRESHOLDS, c_fp, c_fn)
+        th_k = float(THRESHOLDS[int(np.argmin(custos_inner))])
+        nested_ths.append(round(th_k, 2))
+        y_v = y_true[val_idx]
+        p_v = (oof_probs[val_idx] >= th_k).astype(int)
+        cm_k = confusion_matrix(y_v, p_v)
+        _, fp_k, fn_k, _ = cm_k.ravel()
+        nested_costs_raw.append(int(c_fp * fp_k + c_fn * fn_k))
+
     return {
         "best_th": round(best_th, 4),
         "oof_cost_total_60k": best_cost_total,
         "oof_cost_fold_mean": round(float(np.mean(fold_costs_raw)), 1),
         "oof_cost_fold_std": round(float(np.std(fold_costs_raw, ddof=1)), 1),
+        "nested_cost_fold_mean": round(float(np.mean(nested_costs_raw)), 1),
+        "nested_cost_fold_std": round(float(np.std(nested_costs_raw, ddof=1)), 1),
+        "nested_ths": nested_ths,
         "oof_cost_equiv16k_mean": round(float(np.mean(fold_costs_scaled16k)), 1),
         "oof_cost_equiv16k_std": round(float(np.std(fold_costs_scaled16k, ddof=1)), 1),
         "oof_recall_mean": round(float(np.mean(fold_recalls)), 4),
@@ -124,6 +140,23 @@ def encontrar_melhor_limiar_oof(y_true, oof_probs, folds, c_fp=10, c_fn=500):
         "oof_f1_std": round(float(np.std(fold_f1s, ddof=1)), 4),
         "curva_custos_oof": custos_totais.tolist(),
     }
+
+
+def bootstrap_custo_teste(y_te, pred_vec, n_boot=10000, seed=RANDOM_STATE, c_fp=10, c_fn=500):
+    """Calcula IC 95% via reamostragem bootstrap (10.000 amostras) no conjunto de teste."""
+    rng = np.random.default_rng(seed)
+    n = len(y_te)
+    fp_i = ((pred_vec == 1) & (y_te == 0)).astype(np.int32)
+    fn_i = ((pred_vec == 0) & (y_te == 1)).astype(np.int32)
+    c_vec = c_fp * fp_i + c_fn * fn_i
+    tots = np.zeros(n_boot, dtype=np.int64)
+    chunk = 500
+    for s in range(0, n_boot, chunk):
+        e = min(s + chunk, n_boot)
+        idx = rng.integers(0, n, size=(e - s, n))
+        tots[s:e] = c_vec[idx].sum(axis=1)
+    ci_low, ci_high = np.percentile(tots, [2.5, 97.5])
+    return [int(round(ci_low)), int(round(ci_high))], round(float(np.std(tots, ddof=1)), 1), tots
 
 
 def calcular_custo_scania_curva(y_true, y_prob, thresholds=THRESHOLDS, c_fp=10, c_fn=500):
@@ -774,32 +807,47 @@ def main():
                       label="Limiar Teórico de Bayes ($\\theta^* = 0,0196$)")
     b_oof = ax2.bar(x_c + w_c / 2, custos_oof_c, w_c, color="#2ca02c",
                     label="Limiar Empírico Otimizado ($\\theta_{OOF}$)")
-    for idx, bar in enumerate(b_bayes):
-        val_real = custos_bayes[idx]
-        h = bar.get_height()
-        if val_real > y_cap:
+    for idx in range(len(categorias)):
+        bar_b = b_bayes[idx]
+        bar_o = b_oof[idx]
+        val_b = custos_bayes[idx]
+        val_o = custos_oof_c[idx]
+        hb = bar_b.get_height()
+        ho = bar_o.get_height()
+        if val_b > y_cap:
             ax2.text(
-                bar.get_x() + bar.get_width() / 2.0 + 0.18,
-                y_cap - 1.5,
-                f"\\${val_real:.1f}k ↑\n(fora de escala)",
+                bar_b.get_x() + bar_b.get_width() / 2.0 + 0.16,
+                y_cap - 0.8,
+                f"\\${val_b:.1f}k ↑\n(fora de escala)",
                 ha="left",
                 va="top",
-                fontsize=7.8,
+                fontsize=7.6,
                 fontweight="bold",
                 color="#5b2c83",
                 bbox=dict(boxstyle="round,pad=0.2", fc="#f3e8ff", ec="#9467bd", lw=0.8),
             )
+            ax2.text(
+                bar_o.get_x() + bar_o.get_width() / 2.0 + 0.03,
+                ho + 0.35,
+                f"\\${val_o:.1f}k",
+                ha="center",
+                va="bottom",
+                fontsize=7.4,
+                fontweight="bold",
+                color="#145214",
+            )
         else:
-            ax2.text(bar.get_x() + bar.get_width() / 2.0 - 0.02, h + 0.35, f"\\${val_real:.1f}k", ha="center", va="bottom", fontsize=7.1)
-    for idx, bar in enumerate(b_oof):
-        val_real = custos_oof_c[idx]
-        h = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width() / 2.0 + 0.02, h + 0.35, f"\\${val_real:.1f}k", ha="center", va="bottom", fontsize=7.1, fontweight="bold")
+            y_off_b = 0.25 if abs(hb - ho) < 0.4 else 0.35
+            y_off_o = 1.25 if abs(hb - ho) < 0.4 else 0.35
+            ax2.text(bar_b.get_x() + bar_b.get_width() / 2.0 - 0.04, hb + y_off_b, f"\\${val_b:.1f}k",
+                     ha="center", va="bottom", fontsize=7.3, color="#4a2373")
+            ax2.text(bar_o.get_x() + bar_o.get_width() / 2.0 + 0.04, ho + y_off_o, f"\\${val_o:.1f}k",
+                     ha="center", va="bottom", fontsize=7.3, fontweight="bold", color="#145214")
     ax2.set_xticks(x_c)
     ax2.set_xticklabels(categorias, fontsize=8.5)
     ax2.set_ylabel("Custo no Teste (Milhares de US$)")
     ax2.set_title("(b) Custo no Teste: Regra de Bayes ($\\theta^*$) vs. Limiar OOF ($\\theta_{OOF}$)")
-    ax2.set_ylim(0, y_cap + 2.5)
+    ax2.set_ylim(0, y_cap + 3.2)
     ax2.grid(True, axis="y", linestyle=":", alpha=0.6)
     ax2.legend(loc="upper right", fontsize=8.2)
 
