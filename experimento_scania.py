@@ -1,14 +1,15 @@
 """
-Experimento Completo de Manutenção Preditiva - Scania APS Failure Dataset
+Experimento Completo de Diagnóstico Sensível ao Custo da Origem de Falhas - Scania APS Failure Dataset
 Disciplina: Tópicos Especiais em Sistemas Inteligentes: Aprendizado de Máquina
 Autor: João Vitor Lobato Romualdo (CEFET-MG)
 
-Executa integralmente o protocolo da Etapa III (com as recomendações docentes):
-1. Validação Cruzada Estratificada (5 dobras) e Busca de Hiperparâmetros sem vazamento
-2. Estabilidade sob 5 Estratégias de Tratamento de Atributos Ausentes (E1 a E5)
-3. Calibração de Probabilidades (Platt Scaling Sigmoidal e Regressão Isotônica) + Limiar de Bayes vs. OOF
-4. Análise de Sensibilidade à Razão de Custos (c_FN / c_FP in {10, 25, 50, 100, 200})
-5. Geração de Figuras (PDF e PNG) e Tabelas Resumo (JSON/CSV) para o Artigo IEEE
+Executa integralmente o protocolo experimental do artigo IEEE:
+1. Validação Cruzada Estratificada e Aninhada (5 dobras) e Busca de Hiperparâmetros sem vazamento
+2. Estabilidade sob 5 Estratégias de Tratamento de Atributos Ausentes (E1 a E5) e Bootstrap Pareado (10.000 reamostragens)
+3. Avaliação Multi-Semente (5 sementes na Random Forest) e Interpretabilidade (Top-10 + Spearman rho_S)
+4. Calibração de Probabilidades (Platt Scaling Sigmoidal e Regressão Isotônica) + Limiar de Bayes vs. OOF
+5. Análise de Sensibilidade à Razão de Custos (c_FN / c_FP in {10, 25, 50, 100, 200}) com ICs Bootstrap
+6. Geração de Figuras (PDF e PNG) e Exportação de Métricas Completas (JSON)
 """
 
 import json
@@ -18,6 +19,7 @@ import warnings
 import zipfile
 import numpy as np
 import pandas as pd
+from scipy.stats import spearmanr
 
 import matplotlib
 matplotlib.use("Agg")
@@ -89,8 +91,8 @@ def calcular_custo_vetorizado(y_true, y_prob, thresholds=THRESHOLDS, c_fp=10, c_
 
 
 def encontrar_melhor_limiar_oof(y_true, oof_probs, folds, c_fp=10, c_fn=500):
-    """Encontra o limiar que minimiza o custo total OOF e calcula média/DP por dobra."""
-    custos_totais, _, _ = calcular_custo_scania_curva(y_true, oof_probs, THRESHOLDS, c_fp, c_fn)
+    """Encontra o limiar que minimiza o custo total OOF e calcula média/DP por dobra (OOF e Nested CV)."""
+    custos_totais, _, _ = calcular_custo_vetorizado(y_true, oof_probs, THRESHOLDS, c_fp, c_fn)
     best_idx = int(np.argmin(custos_totais))
     best_th = float(THRESHOLDS[best_idx])
     best_cost_total = int(custos_totais[best_idx])
@@ -115,7 +117,7 @@ def encontrar_melhor_limiar_oof(y_true, oof_probs, folds, c_fp=10, c_fn=500):
     nested_costs_raw = []
     nested_ths = []
     for tr_idx, val_idx in folds:
-        custos_inner, _, _ = calcular_custo_scania_curva(y_true[tr_idx], oof_probs[tr_idx], THRESHOLDS, c_fp, c_fn)
+        custos_inner, _, _ = calcular_custo_vetorizado(y_true[tr_idx], oof_probs[tr_idx], THRESHOLDS, c_fp, c_fn)
         th_k = float(THRESHOLDS[int(np.argmin(custos_inner))])
         nested_ths.append(round(th_k, 2))
         y_v = y_true[val_idx]
@@ -159,8 +161,19 @@ def bootstrap_custo_teste(y_te, pred_vec, n_boot=10000, seed=RANDOM_STATE, c_fp=
     return [int(round(ci_low)), int(round(ci_high))], round(float(np.std(tots, ddof=1)), 1), tots
 
 
-def calcular_custo_scania_curva(y_true, y_prob, thresholds=THRESHOLDS, c_fp=10, c_fn=500):
-    return calcular_custo_vetorizado(y_true, y_prob, thresholds, c_fp, c_fn)
+def comparar_bootstrap_pareado(nome_comp, custo_a, custo_b, tots_a, tots_b):
+    """Compara duas distribuições bootstrap pareadas (A - B) e retorna IC95% e p-valores."""
+    diff = tots_a - tots_b
+    ci_low, ci_high = np.percentile(diff, [2.5, 97.5])
+    p_uni = float(np.mean(diff <= 0))
+    p_bi = min(1.0, 2.0 * min(float(np.mean(diff <= 0)), float(np.mean(diff >= 0))))
+    return {
+        "comparacao": nome_comp,
+        "delta_custo": int(custo_a - custo_b),
+        "ic95": [int(round(ci_low)), int(round(ci_high))],
+        "p_unilateral": round(p_uni, 4),
+        "p_bilateral": round(p_bi, 4),
+    }
 
 
 def avaliar_no_teste(y_test, test_probs, th, c_fp=10, c_fn=500):
@@ -421,6 +434,9 @@ def main():
         ("E5", "Sem Descarte (170 col.) + Mediana"),
     ]
     imputacao_results = []
+    boot_tots_by_cod = {}
+    m_lr_e4_full = None
+    m_rf_e4_full = None
 
     for cod, desc in estrategias_info:
         t_e = time.time()
@@ -477,6 +493,24 @@ def main():
         te_res_lr = avaliar_no_teste(y_test, te_probs_lr, oof_res_lr["best_th"])
         te_res_rf = avaliar_no_teste(y_test, te_probs_rf, oof_res_rf["best_th"])
 
+        pred_lr_e = (te_probs_lr >= oof_res_lr["best_th"]).astype(int)
+        pred_rf_e = (te_probs_rf >= oof_res_rf["best_th"]).astype(int)
+        lr_ci95, lr_std, tots_lr = bootstrap_custo_teste(y_test, pred_lr_e)
+        rf_ci95, rf_std, tots_rf = bootstrap_custo_teste(y_test, pred_rf_e)
+        comp_lr_rf = comparar_bootstrap_pareado(
+            f"LR_{cod} - RF_{cod}", te_res_lr["custo"], te_res_rf["custo"], tots_lr, tots_rf
+        )
+        boot_tots_by_cod[cod] = {
+            "lr_custo": te_res_lr["custo"],
+            "rf_custo": te_res_rf["custo"],
+            "tots_lr": tots_lr,
+            "tots_rf": tots_rf,
+            "comp": comp_lr_rf,
+        }
+        if cod == "E4":
+            m_lr_e4_full = m_lr_full
+            m_rf_e4_full = m_rf_full
+
         row = {
             "estrategia": cod,
             "descricao": desc,
@@ -501,14 +535,157 @@ def main():
             "rf_test_pr_auc": te_res_rf["pr_auc"],
             "diferenca_custo_lr_menos_rf": te_res_lr["custo"] - te_res_rf["custo"],
             "razao_custo_lr_rf": round(te_res_lr["custo"] / te_res_rf["custo"], 2),
+            "lr_nested_mean": oof_res_lr["nested_cost_fold_mean"],
+            "lr_nested_std": oof_res_lr["nested_cost_fold_std"],
+            "lr_nested_ths": oof_res_lr["nested_ths"],
+            "rf_nested_mean": oof_res_rf["nested_cost_fold_mean"],
+            "rf_nested_std": oof_res_rf["nested_cost_fold_std"],
+            "rf_nested_ths": oof_res_rf["nested_ths"],
+            "lr_ci95": lr_ci95,
+            "lr_std": lr_std,
+            "rf_ci95": rf_ci95,
+            "rf_std": rf_std,
+            "diff_lr_rf": comp_lr_rf["delta_custo"],
+            "diff_ci95": comp_lr_rf["ic95"],
+            "p_uni": comp_lr_rf["p_unilateral"],
+            "p_bi": comp_lr_rf["p_bilateral"],
         }
         imputacao_results.append(row)
         print(
             f"[{cod}] {desc:<33} ({n_cols} cols) | "
             f"LR Teste=${te_res_lr['custo']:,} (FP={te_res_lr['fp']}, FN={te_res_lr['fn']}, th={oof_res_lr['best_th']:.2f}) | "
-            f"RF Teste=${te_res_rf['custo']:,} (FP={te_res_rf['fp']}, FN={te_res_rf['fn']}, th={oof_res_rf['best_th']:.2f}) "
+            f"RF Teste=${te_res_rf['custo']:,} (FP={te_res_rf['fp']}, FN={te_res_rf['fn']}, th={oof_res_rf['best_th']:.2f}) | "
+            f"Delta=${comp_lr_rf['delta_custo']:,} (p_uni={comp_lr_rf['p_unilateral']:.4f}, p_bi={comp_lr_rf['p_bilateral']:.4f}) "
             f"[{time.time() - t_e:.1f}s]"
         )
+
+    # Testes bootstrap pareados entre estratégias e modelos + avaliação multi-semente + interpretabilidade
+    comparacoes_pareadas = [
+        boot_tots_by_cod["E1"]["comp"],
+        boot_tots_by_cod["E4"]["comp"],
+        boot_tots_by_cod["E3"]["comp"],
+        boot_tots_by_cod["E5"]["comp"],
+        boot_tots_by_cod["E2"]["comp"],
+        comparar_bootstrap_pareado(
+            "RF_E3 - RF_E1 (Zero - Mediana)",
+            boot_tots_by_cod["E3"]["rf_custo"],
+            boot_tots_by_cod["E1"]["rf_custo"],
+            boot_tots_by_cod["E3"]["tots_rf"],
+            boot_tots_by_cod["E1"]["tots_rf"],
+        ),
+        comparar_bootstrap_pareado(
+            "RF_E2 - RF_E1 (Media - Mediana)",
+            boot_tots_by_cod["E2"]["rf_custo"],
+            boot_tots_by_cod["E1"]["rf_custo"],
+            boot_tots_by_cod["E2"]["tots_rf"],
+            boot_tots_by_cod["E1"]["tots_rf"],
+        ),
+        comparar_bootstrap_pareado(
+            "RF_E1 - RF_E4 (Mediana - MNAR)",
+            boot_tots_by_cod["E1"]["rf_custo"],
+            boot_tots_by_cod["E4"]["rf_custo"],
+            boot_tots_by_cod["E1"]["tots_rf"],
+            boot_tots_by_cod["E4"]["tots_rf"],
+        ),
+        comparar_bootstrap_pareado(
+            "LR_E1 - LR_E4 (Mediana - MNAR)",
+            boot_tots_by_cod["E1"]["lr_custo"],
+            boot_tots_by_cod["E4"]["lr_custo"],
+            boot_tots_by_cod["E1"]["tots_lr"],
+            boot_tots_by_cod["E4"]["tots_lr"],
+        ),
+    ]
+
+    sementes_rf = [42, 7, 13, 21, 99]
+    custos_sementes_rf = []
+    for s_rf in sementes_rf:
+        if s_rf == RANDOM_STATE:
+            custos_sementes_rf.append(rf_test_opt["custo"])
+        else:
+            rf_s = RandomForestClassifier(
+                n_estimators=best_rf_cfg["n_estimators"],
+                max_depth=best_rf_cfg["max_depth"],
+                min_samples_leaf=best_rf_cfg["min_samples_leaf"],
+                class_weight="balanced_subsample",
+                random_state=s_rf,
+                n_jobs=-1,
+            )
+            rf_s.fit(X_tr_full_imp, y_train)
+            probs_s = rf_s.predict_proba(X_te_full_imp)[:, 1]
+            res_s = avaliar_no_teste(y_test, probs_s, best_rf_oof_summary["best_th"])
+            custos_sementes_rf.append(res_s["custo"])
+
+    testes_estatisticos_output = {
+        "n_bootstrap": 10000,
+        "comparacoes_pareadas": comparacoes_pareadas,
+        "multi_semente_rf_E1": {
+            "sementes": sementes_rf,
+            "custos_teste_th004": custos_sementes_rf,
+            "media": round(float(np.mean(custos_sementes_rf)), 1),
+            "desvio_padrao": round(float(np.std(custos_sementes_rf, ddof=1)), 1),
+        },
+    }
+
+    # Extração de Interpretabilidade (E1 e Indicadores MNAR de E4)
+    missing_pct_series = X_train_df.isnull().mean() * 100.0
+    keep_cols_e1 = missing_pct_series[missing_pct_series <= 50.0].index.tolist()
+    w_lr_vec = lr_final.coef_[0]
+    abs_w_lr = np.abs(w_lr_vec)
+    gini_rf_vec = rf_final.feature_importances_
+    rho_sp, p_sp = spearmanr(abs_w_lr, gini_rf_vec)
+
+    lr_order = np.argsort(-abs_w_lr)
+    rf_order = np.argsort(-gini_rf_vec)
+    lr_ranks = {int(idx): rank + 1 for rank, idx in enumerate(lr_order)}
+    rf_ranks = {int(idx): rank + 1 for rank, idx in enumerate(rf_order)}
+
+    top10_lr_e1 = []
+    for r_i, idx in enumerate(lr_order[:10], start=1):
+        col = keep_cols_e1[idx]
+        top10_lr_e1.append({
+            "rank": r_i,
+            "atributo": col,
+            "w": round(float(w_lr_vec[idx]), 4),
+            "abs_w": round(float(abs_w_lr[idx]), 4),
+            "odds_ratio": round(float(np.exp(w_lr_vec[idx])), 3),
+            "gini_rf": round(float(gini_rf_vec[idx]), 4),
+            "rf_rank": rf_ranks[int(idx)],
+            "missing_pct": round(float(missing_pct_series[col]), 1),
+        })
+
+    top10_rf_e1 = []
+    for r_i, idx in enumerate(rf_order[:10], start=1):
+        col = keep_cols_e1[idx]
+        top10_rf_e1.append({
+            "rank": r_i,
+            "atributo": col,
+            "gini": round(float(gini_rf_vec[idx]), 4),
+            "w_lr": round(float(w_lr_vec[idx]), 4),
+            "lr_rank": lr_ranks[int(idx)],
+            "missing_pct": round(float(missing_pct_series[col]), 1),
+        })
+
+    cols_with_na_e1 = [c for c in keep_cols_e1 if X_train_df[c].isnull().any()]
+    ind_names_e4 = [f"ind_{c}" for c in cols_with_na_e1]
+    w_e4_ind = m_lr_e4_full.coef_[0][len(keep_cols_e1):]
+    gini_e4_ind = m_rf_e4_full.feature_importances_[len(keep_cols_e1):]
+    top5_ind_lr = [
+        {"indicador": ind_names_e4[i], "w_lr": round(float(w_e4_ind[i]), 4)}
+        for i in np.argsort(-np.abs(w_e4_ind))[:5]
+    ]
+    top5_ind_rf = [
+        {"indicador": ind_names_e4[i], "gini_rf": round(float(gini_e4_ind[i]), 5)}
+        for i in np.argsort(-gini_e4_ind)[:5]
+    ]
+
+    interpretabilidade_output = {
+        "spearman_rho_abs_w_vs_gini": round(float(rho_sp), 4),
+        "spearman_p_value": round(float(p_sp), 6),
+        "top10_lr_E1": top10_lr_e1,
+        "top10_rf_E1": top10_rf_e1,
+        "top5_indicadores_mnar_E4_lr": top5_ind_lr,
+        "top5_indicadores_mnar_E4_rf": top5_ind_rf,
+    }
 
     # =========================================================================
     # BLOCO 3: CALIBRAÇÃO DE PROBABILIDADES (PLATT SCALING E ISOTÔNICA)
@@ -746,9 +923,8 @@ def main():
     fig.savefig(os.path.join(OUT_DIR, "fig_custo_limiar.png"), bbox_inches="tight")
     plt.close(fig)
 
-    # Figura 2: Estabilidade sob Diferentes Estratégias de Imputação (E1 a E5)
+    # Figura 2: Estabilidade sob Diferentes Estratégias de Imputação (E1 a E5) com IC95% Bootstrap
     fig, ax = plt.subplots(figsize=(8.2, 4.3))
-    cods = [r["estrategia"] + "\n(" + r["descricao"].split("+")[1].strip()[:12] + ("+Ind" if "Ind" in r["descricao"] else "") + ")" for r in imputacao_results]
     cods_clean = [
         "E1: >50% + Mediana\n(162 atrib.)",
         "E2: >50% + Média\n(162 atrib.)",
@@ -758,23 +934,39 @@ def main():
     ]
     lr_costs = [r["lr_test_custo"] for r in imputacao_results]
     rf_costs = [r["rf_test_custo"] for r in imputacao_results]
+    lr_err_low = [r["lr_test_custo"] - r["lr_ci95"][0] for r in imputacao_results]
+    lr_err_high = [r["lr_ci95"][1] - r["lr_test_custo"] for r in imputacao_results]
+    rf_err_low = [r["rf_test_custo"] - r["rf_ci95"][0] for r in imputacao_results]
+    rf_err_high = [r["rf_ci95"][1] - r["rf_test_custo"] for r in imputacao_results]
     x = np.arange(len(cods_clean))
     w = 0.35
-    rects1 = ax.bar(x - w / 2, lr_costs, w, label="Regressão Logística (Limiar OOF)", color="#1f77b4")
-    rects2 = ax.bar(x + w / 2, rf_costs, w, label="Random Forest (Limiar OOF)", color="#2ca02c")
+    rects1 = ax.bar(
+        x - w / 2, lr_costs, w,
+        yerr=[lr_err_low, lr_err_high], capsize=3.5,
+        error_kw=dict(lw=1.1, ecolor="#0e436e", alpha=0.85),
+        label="Regressão Logística (Limiar OOF ± IC95%)", color="#1f77b4"
+    )
+    rects2 = ax.bar(
+        x + w / 2, rf_costs, w,
+        yerr=[rf_err_low, rf_err_high], capsize=3.5,
+        error_kw=dict(lw=1.1, ecolor="#165a16", alpha=0.85),
+        label="Random Forest (Limiar OOF ± IC95%)", color="#2ca02c"
+    )
 
-    for r in rects1:
+    for i, r in enumerate(rects1):
         h = r.get_height()
-        ax.text(r.get_x() + r.get_width() / 2.0, h + 250, f"\\${int(h):,}", ha="center", va="bottom", fontsize=8.5, color="#1f77b4", fontweight="bold")
-    for r in rects2:
+        top_ci = imputacao_results[i]["lr_ci95"][1]
+        ax.text(r.get_x() + r.get_width() / 2.0, top_ci + 300, f"\\${int(h):,}", ha="center", va="bottom", fontsize=8.3, color="#1f77b4", fontweight="bold")
+    for i, r in enumerate(rects2):
         h = r.get_height()
-        ax.text(r.get_x() + r.get_width() / 2.0, h + 250, f"\\${int(h):,}", ha="center", va="bottom", fontsize=8.5, color="#2ca02c", fontweight="bold")
+        top_ci = imputacao_results[i]["rf_ci95"][1]
+        ax.text(r.get_x() + r.get_width() / 2.0, top_ci + 300, f"\\${int(h):,}", ha="center", va="bottom", fontsize=8.3, color="#2ca02c", fontweight="bold")
 
     ax.set_ylabel("Custo Total Scania no Teste (US$)")
     ax.set_title("Estabilidade do Custo no Teste sob Diferentes Estratégias de Tratamento de Dados Ausentes")
     ax.set_xticks(x)
     ax.set_xticklabels(cods_clean, fontsize=8.8)
-    ax.set_ylim(0, max(lr_costs) * 1.16)
+    ax.set_ylim(0, max(r["lr_ci95"][1] for r in imputacao_results) * 1.15)
     ax.grid(True, axis="y", linestyle=":", alpha=0.6)
     ax.legend(loc="upper right")
     plt.tight_layout()
@@ -943,6 +1135,8 @@ def main():
         "estabilidade_imputacao": imputacao_results,
         "calibracao": calibracao_results,
         "sensibilidade_custos": sensibilidade_results,
+        "testes_estatisticos": testes_estatisticos_output,
+        "interpretabilidade": interpretabilidade_output,
     }
 
     json_path = os.path.join(OUT_DIR, "resultados_etapa3.json")
