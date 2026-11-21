@@ -328,7 +328,7 @@ A Figura~\ref{fig:fluxograma} sintetiza o fluxo metodológico expandido, contemp
 \section{Resultados e Discussão}
 \label{sec:resultados}
 
-Os experimentos foram executados em linguagem Python utilizando as bibliotecas \texttt{scikit-learn} (v.~1.7.2), \texttt{pandas} (v.~2.3.3), \texttt{numpy} (v.~2.3.4) e \texttt{matplotlib} (v.~3.10.9), com semente aleatória global fixada em \texttt{random\_state}=42. Código e resultados brutos estão disponíveis em \url{https://github.com/joaovitor3105/aps-failure-scania-ml}. A seguir, apresentam-se e discutem-se os resultados divididos em quatro eixos: (i) validação cruzada, seleção de hiperparâmetros e avaliação da configuração primária de referência no conjunto de teste; (ii) estabilidade frente às cinco estratégias de tratamento de atributos ausentes (E1 a E5); (iii) efeito da calibração de probabilidades (\textit{Platt Scaling} e Regressão Isotônica) e validação da regra de decisão de Bayes; e (iv) análise de sensibilidade à variação da razão de custos de erro ($\rho = c_{FN}/c_{FP}$).
+Os experimentos foram executados em linguagem Python utilizando as bibliotecas \texttt{scikit-learn} (v.~1.7.2), \texttt{pandas} (v.~2.3.3), \texttt{numpy} (v.~2.3.4) e \texttt{matplotlib} (v.~3.10.9), com semente aleatória global fixada em \texttt{random\_state}=42. Código, tabelas completas de apêndice e resultados brutos estão disponíveis no repositório do projeto~\cite{romualdo2026repo} (\url{https://github.com/joaovitor3105/aps-failure-scania-ml}). A seguir, apresentam-se e discutem-se os resultados divididos em quatro eixos: (i) validação cruzada, seleção de hiperparâmetros e avaliação da configuração primária de referência no conjunto de teste; (ii) estabilidade frente às cinco estratégias de tratamento de atributos ausentes (E1 a E5); (iii) efeito da calibração de probabilidades (\textit{Platt Scaling} e Regressão Isotônica) e validação da regra de decisão de Bayes; e (iv) análise de sensibilidade à variação da razão de custos de erro ($\rho = c_{FN}/c_{FP}$).
 
 \subsection{Ajuste de Hiperparâmetros, Limiar de Decisão e Desempenho Principal}
 
@@ -645,6 +645,9 @@ A.~Dal~Pozzolo, O.~Caelen, R.~A.~Johnson, and G.~Bontempi, ``Calibrating probabi
 
 \bibitem{drummond2006cost}
 C.~Drummond and R.~C.~Holte, ``Cost curves: An improved method for visualizing classifier performance,'' \emph{Machine Learning}, vol.~65, no.~1, pp.~95--130, 2006.
+
+\bibitem{romualdo2026repo}
+J.~V.~L.~Romualdo, ``Diagnóstico de falhas no sistema de pressão de ar de veículos pesados (Scania APS Failure): código experimental e resultados,'' \emph{GitHub Repository}, 2026. [Online]. Disponível em: \url{https://github.com/joaovitor3105/aps-failure-scania-ml}.
 
 \end{thebibliography}
 
