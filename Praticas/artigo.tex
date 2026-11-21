@@ -339,28 +339,28 @@ A Tabela~\ref{tab:busca_hiperparametros} sintetiza os resultados obtidos durante
 \label{tab:busca_hiperparametros}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{llcccc}
+\setlength{\tabcolsep}{3.0pt}
+\begin{tabular}{llccc}
 \toprule
-\textbf{Modelo} & \textbf{Configuração} & $\boldsymbol{\theta_{OOF}}$ & \textbf{Custo/Dobra (US\$)} & \textbf{ROC-AUC} & \textbf{PR-AUC} \\
+\textbf{Modelo} & \textbf{Configuração} & $\boldsymbol{\theta_{OOF}}$ & \textbf{Custo/Dobra (\$)} & \textbf{PR-AUC} \\
 \midrule
-Reg. Log. & $C = 0{,}001$ & 0,34 & $10.368 \pm 1.177$ & \textbf{0,9826} & 0,7225 \\
-Reg. Log. & $C = 0{,}01$ & 0,39 & $\mathbf{10.288 \pm 1.660}$ & 0,9781 & \textbf{0,7467} \\
-Reg. Log. & $C = 0{,}1$ & 0,32 & $11.208 \pm 1.930$ & 0,9713 & 0,7408 \\
-Reg. Log. & $C = 1{,}0$ & 0,22 & $12.288 \pm 2.296$ & 0,9645 & 0,7319 \\
-Reg. Log. & $C = 10{,}0$ & 0,24 & $12.536 \pm 2.310$ & 0,9603 & 0,7324 \\
+Reg. Log. & $C = 0{,}001$ & 0,34 & $10.368 \pm 1.177$ & 0,7225 \\
+Reg. Log. & $C = 0{,}01$ & 0,39 & $\mathbf{10.288 \pm 1.660}$ & \textbf{0,7467} \\
+Reg. Log. & $C = 0{,}1$ & 0,32 & $11.208 \pm 1.930$ & 0,7408 \\
+Reg. Log. & $C = 1{,}0$ & 0,22 & $12.288 \pm 2.296$ & 0,7319 \\
+Reg. Log. & $C = 10{,}0$ & 0,24 & $12.536 \pm 2.310$ & 0,7324 \\
 \midrule
-RF ($B=100$) & prof.$=10$, folha$=1$ & 0,11 & $8.968 \pm 991$ & 0,9829 & 0,6656 \\
-RF ($B=100$) & prof.$=10$, folha$=5$ & 0,13 & $9.192 \pm 608$ & 0,9829 & 0,7115 \\
-RF ($B=100$) & prof.$=20$, folha$=1$ & 0,06 & $8.984 \pm 1.369$ & 0,9801 & 0,7245 \\
-RF ($B=100$) & prof.$=20$, folha$=5$ & 0,08 & $8.678 \pm 860$ & \textbf{0,9857} & 0,8214 \\
-RF ($B=100$) & prof.$=\text{Livre}$, folha$=1$ & 0,04 & $\mathbf{8.626 \pm 875}$ & 0,9828 & 0,8354 \\
-RF ($B=100$) & prof.$=\text{Livre}$, folha$=5$ & 0,07 & $8.718 \pm 1.038$ & 0,9850 & \textbf{0,8370} \\
+RF ($B=100$) & prof.$=10$, folha$=1$ & 0,11 & $8.968 \pm 991$ & 0,6656 \\
+RF ($B=100$) & prof.$=10$, folha$=5$ & 0,13 & $9.192 \pm 608$ & 0,7115 \\
+RF ($B=100$) & prof.$=20$, folha$=1$ & 0,06 & $8.984 \pm 1.369$ & 0,7245 \\
+RF ($B=100$) & prof.$=20$, folha$=5$ & 0,08 & $8.678 \pm 860$ & 0,8214 \\
+RF ($B=100$) & prof.$=\text{Livre}$, folha$=1$ & 0,04 & $\mathbf{8.626 \pm 875}$ & 0,8354 \\
+RF ($B=100$) & prof.$=\text{Livre}$, folha$=5$ & 0,07 & $8.718 \pm 1.038$ & \textbf{0,8370} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Na Regressão Logística, observa-se que uma regularização L2 mais forte ($C = 0{,}01$) alcança o menor custo médio por dobra ($10.288 \pm 1.660$, totalizando \$51.440 no conjunto de treino \textit{out-of-fold}) e a maior PR-AUC ($0{,}7467$), embora a diferença frente a $C = 0{,}001$ ($10.368 \pm 1.177$) seja inferior a um décimo de desvio-padrão (empate prático). Valores elevados de $C$ ($1{,}0$ e $10{,}0$) degradam tanto o custo quanto o desvio-padrão entre dobras, o que é compatível com sobreajuste aos casos positivos sob ponderação pesada ($\omega_{pos} = 30{,}0$, razão $\omega_{pos}/\omega_{neg} = 59$) em atributos fortemente correlacionados (hipótese não testada neste trabalho). Já na \textit{Random Forest}, configurações sem restrição severa de profundidade (profundidade 20 com \texttt{min\_samples\_leaf}=5 ou profundidade livre com \texttt{min\_samples\_leaf} $\in \{1, 5\}$) elevam a PR-AUC de $0{,}6656$ para a faixa de $0{,}8214$ a $0{,}8370$ e produzem custos médios praticamente empatados entre si (de $\$8.626$ a $\$8.718$, com diferenças muito inferiores a um desvio-padrão), selecionando-se a configuração de profundidade livre e \texttt{min\_samples\_leaf}=1 por registrar o menor custo pontual por dobra (\$8.626 $\pm$ \$875, cerca de 16,2\% inferior ao modelo linear na validação e com cerca de metade do desvio-padrão entre dobras). Sob validação cruzada aninhada (\textit{Nested CV}, em que o limiar de cada dobra é escolhido exclusivamente nas 4 dobras restantes), o custo médio por dobra passa para $\$10.490 \pm 1.552$ na Regressão Logística ($\theta^{(-k)}_{OOF} \in [0{,}35; 0{,}39]$) e $\$8.804 \pm 781$ na \textit{Random Forest} ($\theta^{(-k)}_{OOF} \in [0{,}04; 0{,}05]$), confirmando que o otimismo da escolha de limiar é reduzido ($\approx 2\%$) e que a vantagem da floresta na validação se mantém sem vazamento de limiar.
+Na Regressão Logística, observa-se que uma regularização L2 mais forte ($C = 0{,}01$) alcança o menor custo médio por dobra ($10.288 \pm 1.660$, totalizando \$51.440 no conjunto de treino \textit{out-of-fold}, com $\text{ROC-AUC} = 0{,}9781$) e a maior PR-AUC ($0{,}7467$), embora a diferença frente a $C = 0{,}001$ ($10.368 \pm 1.177$) seja inferior a um décimo de desvio-padrão (empate prático). Valores elevados de $C$ ($1{,}0$ e $10{,}0$) degradam tanto o custo quanto o desvio-padrão entre dobras, o que é compatível com sobreajuste aos casos positivos sob ponderação pesada ($\omega_{pos} = 30{,}0$, razão $\omega_{pos}/\omega_{neg} = 59$) em atributos fortemente correlacionados (hipótese não testada neste trabalho). Já na \textit{Random Forest}, configurações sem restrição severa de profundidade (profundidade 20 com \texttt{min\_samples\_leaf}=5 ou profundidade livre com \texttt{min\_samples\_leaf} $\in \{1, 5\}$) elevam a PR-AUC de $0{,}6656$ para a faixa de $0{,}8214$ a $0{,}8370$ (com $\text{ROC-AUC} \in [0{,}9828; 0{,}9857]$) e produzem custos médios praticamente empatados entre si (de $\$8.626$ a $\$8.718$, com diferenças muito inferiores a um desvio-padrão), selecionando-se a configuração de profundidade livre e \texttt{min\_samples\_leaf}=1 por registrar o menor custo pontual por dobra (\$8.626 $\pm$ \$875, cerca de 16,2\% inferior ao modelo linear na validação e com cerca de metade do desvio-padrão entre dobras). Sob validação cruzada aninhada (\textit{Nested CV}, em que o limiar de cada dobra é escolhido exclusivamente nas 4 dobras restantes), o custo médio por dobra passa para $\$10.490 \pm 1.552$ na Regressão Logística ($\theta^{(-k)}_{OOF} \in [0{,}35; 0{,}39]$) e $\$8.804 \pm 781$ na \textit{Random Forest} ($\theta^{(-k)}_{OOF} \in [0{,}04; 0{,}05]$), confirmando que o otimismo da escolha de limiar é reduzido ($\approx 2\%$) e que a vantagem da floresta na validação se mantém sem vazamento de limiar.
 
 Fixados os hiperparâmetros ótimos ($C=0{,}01$ para a Regressão Logística e $B=100$ árvores sem poda de profundidade para a \textit{Random Forest}) e os respectivos limiares ótimos obtidos nas predições \textit{out-of-fold} ($\theta_{OOF} = 0{,}39$ para Regressão Logística e $\theta_{OOF} = 0{,}04$ para \textit{Random Forest}) como configuração primária definida antes de observar o conjunto de teste, ambos os modelos foram reajustados na totalidade do treino e avaliados nas 16.000 instâncias do conjunto de teste cego (onde a Regressão Logística alcança $\text{ROC-AUC} = 0{,}9892$ e $\text{PR-AUC} = 0{,}8053$, e a \textit{Random Forest} alcança $\text{ROC-AUC} = 0{,}9925$ e $\text{PR-AUC} = 0{,}8868$; o conjunto de teste é utilizado subsequentemente nas análises comparativas de múltiplas sementes, imputação E1--E5, calibração e sensibilidade). A Tabela~\ref{tab:resultados_teste_principal} e a Figura~\ref{fig:custo_limiar} detalham o desempenho comparativo no limiar padrão ($\theta = 0{,}50$) e no limiar otimizado ($\theta_{OOF}$).
 
@@ -369,13 +369,13 @@ Fixados os hiperparâmetros ótimos ($C=0{,}01$ para a Regressão Logística e $
 \label{tab:resultados_teste_principal}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{2.4pt}
 \begin{tabular}{lccccccr}
 \toprule
-\textbf{Modelo} & $\boldsymbol{\theta}$ & \textbf{Acur.} & \textbf{Prec.} & \textbf{Recall} & $\mathbf{F_1}$ & $\mathbf{FP / FN}$ & \textbf{Custo (US\$)} \\
+\textbf{Modelo} & $\boldsymbol{\theta}$ & \textbf{Acur.} & \textbf{Prec.} & \textbf{Recall} & $\mathbf{F_1}$ & $\mathbf{FP / FN}$ & \textbf{Custo (\$)} \\
 \midrule
-Reg. Log. (Padrão) & 0,50 & 0,9761 & 0,4951 & 0,9387 & 0,6483 & 359 / 23 & 15.090 \\
-Reg. Log. (OOF) & 0,39 & 0,9709 & 0,4437 & 0,9467 & 0,6043 & 445 / 20 & 14.450 \\
+LR (Padrão) & 0,50 & 0,9761 & 0,4951 & 0,9387 & 0,6483 & 359 / 23 & 15.090 \\
+LR (OOF) & 0,39 & 0,9709 & 0,4437 & 0,9467 & 0,6043 & 445 / 20 & 14.450 \\
 RF (Padrão) & 0,50 & \textbf{0,9894} & \textbf{0,9328} & 0,5920 & \textbf{0,7243} & \textbf{16} / 153 & 76.660 \\
 RF (OOF) & 0,04 & 0,9696 & 0,4333 & \textbf{0,9707} & 0,5992 & 476 / \textbf{11} & \textbf{10.260} \\
 \bottomrule
@@ -399,7 +399,7 @@ A análise crítica da Tabela~\ref{tab:resultados_teste_principal} e da Figura~\
 
 Para demonstrar empiricamente a interpretabilidade dos modelos e comparar os sinais priorizados por cada família, a Tabela~\ref{tab:interpretabilidade_atributos} unifica a comparação dos cinco atributos de maior magnitude de coeficiente padronizado ($|w_j|$ e razão de chances $\text{OR} = e^{w_j}$ por incremento de $1\sigma$) na Regressão Logística e dos cinco atributos de maior redução média de impureza de Gini na \textit{Random Forest} (Estratégia E1, resultando em 8 atributos distintos pela interseção do par principal; a lista completa encontra-se no repositório do projeto). Observa-se correlação de postos de Spearman positiva fraca, porém estatisticamente significativa, entre $|w_j|$ e a importância de Gini nos 162 atributos ($\rho_S = 0{,}2675$, $p = 5{,}78 \times 10^{-4}$). Ambos os modelos convergem nos dois principais preditores globais de falha: o contador operacional primário \texttt{aa\_000} (0,0\% de omissão, 1º na Regressão Logística com $w = +0{,}9745$, $\text{OR} = 2{,}650$, e 4º na \textit{Random Forest} com $\text{Gini} = 0{,}0563$) e a variável \texttt{ck\_000} (0,6\% de omissão, 1ª na \textit{Random Forest} com $\text{Gini} = 0{,}1166$ e 4ª na Regressão Logística com $w = +0{,}6835$, $\text{OR} = 1{,}981$). Por outro lado, variáveis quase perfeitamente colineares entre si, como \texttt{bv\_000} (5ª na \textit{Random Forest}, junto a \texttt{bu\_000} e \texttt{cq\_000} em 8ª e 9ª), têm seus pesos individuais diluídos pela regularização L2 na Regressão Logística ($w = +0{,}0336$, posições 133--135), ao passo que o modelo linear atribui pesos negativos expressivos a variáveis compensatórias (\texttt{cb\_000} em 3º com $w = -0{,}6898$ e \texttt{db\_000} em 7º com $w = -0{,}5610$).
 
-\begin{table}[!t]
+\begin{table}[!b]
 \caption{Principais Atributos Preditores (Top-5 da Regressão Logística por $|w_j|$ e Top-5 da \textit{Random Forest} por Impureza de Gini -- Estratégia E1)}
 \label{tab:interpretabilidade_atributos}
 \centering
@@ -409,12 +409,14 @@ Para demonstrar empiricamente a interpretabilidade dos modelos e comparar os sin
 \toprule
 \textbf{Atributo} & \textbf{Rank LR} & $\mathbf{w_j}$ & $\mathbf{OR = e^{w_j}}$ & \textbf{Rank RF} & \textbf{Imp. Gini} & \textbf{Nulos} \\
 \midrule
+\multicolumn{7}{l}{\textit{Top-5 da Regressão Logística (inclui o 1º e o 4º da RF)}} \\
 \texttt{aa\_000} & \textbf{1º} & $\mathbf{+0{,}9745}$ & $\mathbf{2{,}650}$ & 4º & 0,0563 & 0,0\% \\
 \texttt{by\_000} & 2º & $+0{,}7851$ & $2{,}193$ & 28º & 0,0087 & 0,8\% \\
 \texttt{cb\_000} & 3º & $-0{,}6898$ & $0{,}502$ & 75º & 0,0013 & 1,2\% \\
 \texttt{ck\_000} & 4º & $+0{,}6835$ & $1{,}981$ & \textbf{1º} & \textbf{0,1166} & 0,6\% \\
 \texttt{bs\_000} & 5º & $+0{,}6290$ & $1{,}876$ & 49º & 0,0025 & 1,2\% \\
 \midrule
+\multicolumn{7}{l}{\textit{Demais destaques do Top-5 da Random Forest (2º, 3º e 5º)}} \\
 \texttt{ci\_000} & 37º & $+0{,}2183$ & $1{,}244$ & 2º & 0,0846 & 0,6\% \\
 \texttt{dn\_000} & 91º & $+0{,}0864$ & $1{,}090$ & 3º & 0,0599 & 1,2\% \\
 \texttt{bv\_000} & 134º & $+0{,}0336$ & $1{,}034$ & 5º & 0,0459 & 1,2\% \\
@@ -431,16 +433,18 @@ Para verificar se a vantagem da \textit{Random Forest} sobre a Regressão Logís
 \label{tab:estabilidade_imputacao}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3.2pt}
-\begin{tabular}{llcccc}
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{llccc}
 \toprule
-\textbf{Cód.} & \textbf{Estratégia (Atrib.)} & \textbf{LR} & \textbf{RF} & $\boldsymbol{\Delta C}$ \textbf{($IC_{95\%}$)} & $\boldsymbol{p_{bi}}$ \textbf{($\boldsymbol{p_{uni}}$)} \\
+& & \multicolumn{2}{c}{\textbf{Custo Teste (\$)}} & \\
+\cmidrule(lr){3-4}
+\textbf{Cód.} & \textbf{Estratégia (Atrib.)} & \textbf{LR} & \textbf{RF} & $\boldsymbol{\Delta C}$ \textbf{[$IC_{95\%}$] ($\boldsymbol{p_{bi}}$)} \\
 \midrule
-E1 & $>50\%$ + Mediana (162) & 14.450 & 10.260 & $+4.190$ ($[+250; +8.320]$) & \textbf{0,037} (\textbf{0,019}) \\
-E2 & $>50\%$ + Média (162) & 14.470 & 12.220 & $+2.250$ ($[-1.940; +6.520]$) & 0,302 (0,151) \\
-E3 & $>50\%$ + Zero (162) & 16.460 & 12.620 & $+3.840$ ($[-620; +8.530]$) & 0,092 (\textbf{0,046}) \\
-E4 & $>50\%$ + Med. + MNAR (323) & \textbf{12.910} & \textbf{9.450} & $+3.460$ ($[-200; +7.370]$) & 0,065 (\textbf{0,032}) \\
-E5 & Sem Corte + Mediana (170) & 13.950 & 10.810 & $+3.140$ ($[-430; +6.860]$) & 0,081 (\textbf{0,040}) \\
+E1 & $>50\%$ + Med. (162) & 14.450 & 10.260 & $+4.190$ [$+250; +8.320$] (\textbf{0,037}) \\
+E2 & $>50\%$ + Média (162) & 14.470 & 12.220 & $+2.250$ [$-1.940; +6.520$] (0,302) \\
+E3 & $>50\%$ + Zero (162) & 16.460 & 12.620 & $+3.840$ [$-620; +8.530$] (0,092) \\
+E4 & $>50\%$ + MNAR (323) & \textbf{12.910} & \textbf{9.450} & $+3.460$ [$-200; +7.370$] (0,065) \\
+E5 & 170 col. + Med. (170) & 13.950 & 10.810 & $+3.140$ [$-430; +6.860$] (0,081) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -507,16 +511,18 @@ Em cenários reais de operação logística, a razão $\rho = c_{FN}/c_{FP}$ ent
 \label{tab:sensibilidade_custos}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{cccccr}
+\setlength{\tabcolsep}{2.4pt}
+\begin{tabular}{ccccc}
 \toprule
-$\boldsymbol{\rho}$ & $\mathbf{c_{FN}}$ & \textbf{LR ($\boldsymbol{\theta_{OOF}}$)} & \textbf{RF ($\boldsymbol{\theta_{OOF}}$)} & $\boldsymbol{\Delta C}$ \textbf{($IC_{95\%}$)} & \textbf{Razão ($\boldsymbol{p_{bi}}$)} \\
+& \multicolumn{2}{c}{\textbf{Custo Teste (\$)}} & & \\
+\cmidrule(lr){2-3}
+$\boldsymbol{\rho}$ ($\mathbf{c_{FN}}$) & \textbf{LR} & \textbf{RF} & $\boldsymbol{\Delta C}$ \textbf{[$IC_{95\%}$]} & \textbf{Razão ($\boldsymbol{p_{bi}}$)} \\
 \midrule
-$10:1$ & \$100 & 5.630 & \textbf{4.570} & $+1.060$ ($[+50; +2.110]$) & $1{,}23\times$ ($0{,}041$) \\
-$25:1$ & \$250 & 9.450 & \textbf{7.100} & $+2.350$ ($[+430; +4.380]$) & $1{,}33\times$ ($0{,}014$) \\
-$50:1$ & \$500 & 14.450 & \textbf{10.260} & $+4.190$ ($[+250; +8.320]$) & $1{,}41\times$ ($0{,}037$) \\
-$100:1$ & \$1.000 & 20.440 & \textbf{10.930} & $+9.510$ ($[+4.420; +15.520]$) & $1{,}87\times$ ($<10^{-3}$) \\
-$200:1$ & \$2.000 & 28.640 & \textbf{13.930} & $+14.710$ ($[+6.460; +24.900]$) & $\mathbf{2{,}06\times}$ ($<10^{-3}$) \\
+$10:1$ (\$100) & 5.630 & \textbf{4.570} & $+1.060$ [$+50; +2.110$] & $1{,}23\times$ ($0{,}041$) \\
+$25:1$ (\$250) & 9.450 & \textbf{7.100} & $+2.350$ [$+430; +4.380$] & $1{,}33\times$ ($0{,}014$) \\
+$50:1$ (\$500) & 14.450 & \textbf{10.260} & $+4.190$ [$+250; +8.320$] & $1{,}41\times$ ($0{,}037$) \\
+$100:1$ (\$1\text{k}) & 20.440 & \textbf{10.930} & $+9.510$ [$+4.420; +15.520$] & $1{,}87\times$ ($<10^{-3}$) \\
+$200:1$ (\$2\text{k}) & 28.640 & \textbf{13.930} & $+14.710$ [$+6.460; +24.900$] & $\mathbf{2{,}06\times}$ ($<10^{-3}$) \\
 \bottomrule
 \end{tabular}
 \end{table}
