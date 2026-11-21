@@ -1,7 +1,7 @@
 """
 Experimento Completo de Diagnóstico Sensível ao Custo da Origem de Falhas - Scania APS Failure Dataset
 Disciplina: Tópicos Especiais em Sistemas Inteligentes: Aprendizado de Máquina
-Autor: João Vitor Lobato Romualdo (CEFET-MG)
+Autor: João Vitor Lobato Romualdo (UFCI-MG)
 
 Executa integralmente o protocolo experimental do artigo IEEE:
 1. Validação Cruzada Estratificada e Aninhada (5 dobras) e Busca de Hiperparâmetros sem vazamento

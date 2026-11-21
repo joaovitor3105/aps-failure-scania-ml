@@ -1,6 +1,6 @@
 # Diagnóstico Sensível ao Custo da Origem de Falhas — Scania APS Failure (ML)
 
-Projeto da disciplina **Tópicos Especiais em Sistemas Inteligentes: Aprendizado de Máquina** (CEFET-MG — Campus V, Divinópolis).  
+Projeto da disciplina **Tópicos Especiais em Sistemas Inteligentes: Aprendizado de Máquina** (Universidade Federal de Ciência e Inovação de Minas Gerais — UFCI-MG, Campus V, Divinópolis).  
 **Autor:** João Vitor Lobato Romualdo
 
 ---
