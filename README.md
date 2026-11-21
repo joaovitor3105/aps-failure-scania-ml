@@ -7,7 +7,7 @@ Projeto da disciplina **Tópicos Especiais em Sistemas Inteligentes: Aprendizado
 
 ## Sobre o Projeto
 
-Este repositório implementa e avalia um arcabouço experimental de **Aprendizado de Máquina Sensível ao Custo** voltado ao diagnóstico e à triagem da origem de falhas no Sistema de Pressão de Ar (*Air Pressure System* — APS) de caminhões pesados da Scania, utilizando o benchmark público **[APS Failure at Scania Trucks (UCI Machine Learning Repository)](https://archive.ics.uci.edu/dataset/421/aps+failure+at+scania+trucks)** (60.000 instâncias de treino com 1,67% de falhas no APS, 16.000 de teste com 2,34%, totalizando $\approx 1{,}81\%$ global, e 170 atributos numéricos anonimizados).
+Este repositório implementa e avalia um arcabouço experimental de **Aprendizado de Máquina Sensível ao Custo** voltado ao diagnóstico e à triagem da origem de falhas no Sistema de Pressão de Ar (*Air Pressure System* — APS) de caminhões pesados da Scania, utilizando o benchmark público **[APS Failure at Scania Trucks (UCI Machine Learning Repository)](https://archive.ics.uci.edu/dataset/421/aps+failure+at+scania+trucks)** (60.000 instâncias de treino com 1,67% de falhas no APS, 16.000 de teste com 2,34%, totalizando $\approx 1,81\%$ global, e 170 atributos numéricos anonimizados).
 
 Na base oficial, os veículos já apresentaram falha e a tarefa consiste em identificar se a anomalia provém do APS (classe positiva, `pos`) ou de componentes não relacionados ao APS (classe negativa, `neg`). O estudo contrasta um modelo linear transparente e leve (**Regressão Logística** com ponderação balanceada de classes) com comitês não lineares de árvores de decisão (**Random Forest**) sob a métrica oficial assimétrica do fabricante:
 
@@ -15,10 +15,10 @@ $$C_{total} = 10 \cdot FP + 500 \cdot FN$$
 
 onde $FP$ contabiliza verificações diagnósticas desnecessárias do APS em oficina (US&#36; 10) e $FN$ contabiliza falhas reais do APS não diagnosticadas (US&#36; 500).
 
-Além da avaliação nominal com ajuste de limiar *out-of-fold* ($\theta_{OOF}$) em validação cruzada estratificada e aninhada (*Nested CV*) de 5 dobras sem vazamento de dados, reamostragem *bootstrap* pareada ($10.000$ amostras, reportando intervalos de confiança $IC_{95\%}$, $p$-valores unilaterais para a hipótese direcional motivada pelo benchmark $C_{RF} < C_{LR}$ e bilaterais), avaliação multi-semente (5 sementes na *Random Forest*) e análise de interpretabilidade (Top-10 atributos e correlação de Spearman $\rho_S$), o trabalho investiga três eixos complementares:
+Além da avaliação nominal com ajuste de limiar *out-of-fold* ($\theta_{OOF}$) em validação cruzada estratificada e aninhada (*Nested CV*) de 5 dobras sem vazamento de dados, reamostragem *bootstrap* pareada (10.000 amostras, reportando intervalos de confiança $IC_{95\%}$, $p$-valores unilaterais para a hipótese direcional motivada pelo benchmark $C_{RF} < C_{LR}$ e bilaterais), avaliação multi-semente (5 sementes na *Random Forest*) e análise de interpretabilidade (Top-10 atributos e correlação de Spearman $\rho_S$), o trabalho investiga três eixos complementares:
 1. **Estabilidade frente ao Tratamento de Dados Ausentes (E1 a E5):** Comparação entre imputação por mediana, média, constante zero, adição de indicadores binários de ausência (*Missingness Indicators* — MNAR) e preservação integral das 170 colunas.
-2. **Calibração Pós-Treinamento de Probabilidades:** Impacto do *Platt Scaling* (Sigmoidal) e da **Regressão Isotônica (PAVA)** sobre o *Brier Score* e sobre a viabilidade de aplicar diretamente o limiar ótimo teórico de Bayes ($\theta^* = \frac{c_{FP}}{c_{FP}+c_{FN}} \approx 0{,}0196$).
-3. **Análise de Sensibilidade à Razão de Custos ($\rho = c_{FN}/c_{FP} \in \lbrace 10, 25, 50, 100, 200 \rbrace$):** Delimitação dos regimes operacionais em que o sobrecusto do modelo linear interpretável permanece moderado frente à *Random Forest*.
+2. **Calibração Pós-Treinamento de Probabilidades:** Impacto do *Platt Scaling* (Sigmoidal) e da **Regressão Isotônica (PAVA)** sobre o *Brier Score* e sobre a viabilidade de aplicar diretamente o limiar ótimo teórico de Bayes ($\theta^* = \frac{c_{FP}}{c_{FP}+c_{FN}} \approx 0,0196$).
+3. **Análise de Sensibilidade à Razão de Custos ($\rho = c_{FN}/c_{FP}$ em 10, 25, 50, 100 e 200):** Delimitação dos regimes operacionais em que o sobrecusto do modelo linear interpretável permanece moderado frente à *Random Forest*.
 
 ---
 
@@ -36,8 +36,8 @@ Além da avaliação nominal com ajuste de limiar *out-of-fold* ($\theta_{OOF}$)
 | **Random Forest + Calibração de Platt (Bayes $\theta^*$, Explor.)** | 0,0196 | **98,67%** | 38,50% | 0,9925 | 0,8868 | 591 | **5** | **US&#36; 8.410** |
 
 > **Destaques Estatísticos e Operacionais:**
-> - Na estratégia primária de referência **E1**, a diferença pareada no teste é $\Delta C = C_{LR} - C_{RF} = +\text{US&#36; } 4.190$ ($IC_{95\%}: [+\text{US&#36; } 250;\; +\text{US&#36; } 8.320]$, $p_{uni} = 0{,}0185$, $p_{bi} = 0{,}0370$).
-> - Em contrapartida, a Regressão Logística é **13,4x mais rápida na inferência** ($3{,}66\text{ ms}$ contra $48{,}89\text{ ms}$) e **2,9x mais rápida no treinamento** ($2{,}45\text{ s}$ contra $7{,}13\text{ s}$), exigindo apenas 163 parâmetros.
+> - Na estratégia primária de referência **E1**, a diferença pareada no teste é $\Delta C = C_{LR} - C_{RF} =$ +US&#36; 4.190 ($IC_{95\%}$: [+US&#36; 250; +US&#36; 8.320], $p_{uni} = 0,0185$, $p_{bi} = 0,0370$).
+> - Em contrapartida, a Regressão Logística é **13,4x mais rápida na inferência** (3,66 ms contra 48,89 ms) e **2,9x mais rápida no treinamento** (2,45 s contra 7,13 s), exigindo apenas 163 parâmetros.
 > - Todas as tabelas completas (incluindo o Top-10 de interpretabilidade e as 15 colunas das estratégias E1–E5) encontram-se documentadas em [RELATORIO_FINAL.md](RELATORIO_FINAL.md) e exportadas em [Praticas/resultados_etapa3.json](Praticas/resultados_etapa3.json).
 
 ---
