@@ -1,8 +1,8 @@
-# Relatório Técnico e Apêndice de Tabelas Completas — Diagnóstico Sensível ao Custo da Origem de Falhas (Scania APS Failure)
+# Relatório Técnico e Apêndice de Tabelas Completas — Diagnóstico de Falhas no Sistema de Pressão de Ar de Veículos Pesados (Scania APS Failure)
 
 > [!IMPORTANT]
 > **Status dos Entregáveis:**
-> - **Artigo Completo (LaTeX IEEEtran):** [artigo.tex](Praticas/artigo.tex) — intitulado *"Diagnóstico Sensível ao Custo da Origem de Falhas no Sistema de Pressão de Ar de Veículos Pesados Baseado em Aprendizado de Máquina"*.
+> - **Artigo Completo (LaTeX IEEEtran):** [artigo.tex](Praticas/artigo.tex) — intitulado *"Diagnóstico de Falhas no Sistema de Pressão de Ar de Veículos Pesados: Uma Abordagem Sensível ao Custo Baseada em Aprendizado de Máquina"*.
 > - **Código Experimental Reprodutível:** [experimento_scania.py](experimento_scania.py) e métricas completas em [resultados_etapa3.json](Praticas/resultados_etapa3.json).
 > - **Figuras Científicas (`Praticas/`):**
 >   - [fig_custo_limiar.pdf](Praticas/fig_custo_limiar.pdf) / [fig_custo_limiar.png](Praticas/fig_custo_limiar.png)

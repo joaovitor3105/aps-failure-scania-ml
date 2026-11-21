@@ -1,5 +1,5 @@
 """
-Experimento Completo de Diagnóstico Sensível ao Custo da Origem de Falhas - Scania APS Failure Dataset
+Experimento Completo de Diagnóstico de Falhas Sensível ao Custo - Scania APS Failure Dataset
 Disciplina: Tópicos Especiais em Sistemas Inteligentes: Aprendizado de Máquina
 Autor: João Vitor Lobato Romualdo (UFCI-MG)
 
